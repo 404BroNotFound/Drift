@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 96" role="img" aria-labelledby="title desc">
+  <title id="title">Drift</title>
+  <desc id="desc">A circular flowing-wave mark beside the Drift wordmark</desc>
+  <g fill="none" stroke="#f4f0e8" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke-width="3.2" d="M72 23.5A35 35 0 1 0 76.5 68" opacity=".95"/>
+    <path stroke-width="4.2" d="M19 51c10-15 19-15 29 0s19 15 29 0"/>
+    <path stroke-width="2.4" d="M24 64c8-10 16-10 24 0s16 10 24 0" opacity=".55"/>
+    <circle cx="71.5" cy="25.5" r="3.2" fill="#e7a18e" stroke="none"/>
+  </g>
+  <text x="106" y="66" fill="#f4f0e8" font-family="Outfit, Manrope, Arial, sans-serif" font-size="55" font-weight="500" letter-spacing="-2.2">drift</text>
+</svg>

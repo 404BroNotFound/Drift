@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Drift">
+  <rect width="96" height="96" rx="22" fill="#0a2930"/>
+  <g fill="none" stroke="#c7e4dc" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke-width="3.2" d="M72 23.5A35 35 0 1 0 76.5 68"/>
+    <path stroke-width="4.2" d="M19 51c10-15 19-15 29 0s19 15 29 0"/>
+    <path stroke-width="2.4" d="M24 64c8-10 16-10 24 0s16 10 24 0" opacity=".55"/>
+    <circle cx="71.5" cy="25.5" r="3.2" fill="#e7a18e" stroke="none"/>
+  </g>
+</svg>
