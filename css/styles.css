@@ -2175,14 +2175,15 @@ html {
 .mood-choice:nth-child(even) {
   min-height: 220px;
   border-radius: 999px;
-  padding: 28px;
-  justify-content: flex-end;
+  padding: 58px 48px;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
   border: 1px solid #ffffffb8;
   box-shadow:
     inset 0 1px 0 #fff,
     0 16px 35px #17333b12;
-  text-align: left;
+  text-align: center;
 }
 .mood-choice:before {
   content: "";
@@ -2198,8 +2199,8 @@ html {
 .mood-choice:after {
   content: "→";
   position: absolute;
-  right: 25px;
-  bottom: 25px;
+  left: 50%;
+  bottom: 18px;
   width: 38px;
   height: 38px;
   border-radius: 50%;
@@ -2208,6 +2209,7 @@ html {
   background: #ffffff7d;
   border: 1px solid #ffffff8c;
   font-size: 15px;
+  transform: translateX(-50%);
   transition: 0.25s;
 }
 .mood-choice:hover {
@@ -2220,14 +2222,16 @@ html {
   transform: scale(1.25);
 }
 .mood-choice:hover:after {
-  transform: translateX(3px);
+  transform: translateX(calc(-50% + 3px));
   background: white;
 }
 .mood-choice i {
-  right: 27px;
-  top: 25px;
+  left: 50%;
+  right: auto;
+  top: 18px;
   font-size: 31px;
   opacity: 0.75;
+  transform: translateX(-50%);
   z-index: 2;
 }
 .mood-choice strong,
@@ -2235,7 +2239,7 @@ html {
   position: relative;
   z-index: 2;
   display: block;
-  max-width: calc(100% - 55px);
+  max-width: 100%;
 }
 .mood-choice strong {
   font-size: 30px;
@@ -2269,24 +2273,26 @@ html {
   .mood-choice:nth-child(even) {
     min-height: 180px;
     border-radius: 999px;
-    padding: 20px;
+    padding: 50px 28px;
   }
   .mood-choice strong {
     font-size: 24px;
   }
   .mood-choice span {
     font-size: 9px;
-    max-width: calc(100% - 35px);
+    max-width: 100%;
   }
   .mood-choice:after {
-    right: 16px;
-    bottom: 16px;
+    left: 50%;
+    right: auto;
+    bottom: 12px;
     width: 32px;
     height: 32px;
   }
   .mood-choice i {
-    right: 18px;
-    top: 16px;
+    left: 50%;
+    right: auto;
+    top: 13px;
     font-size: 25px;
   }
 }
