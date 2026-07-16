@@ -432,6 +432,7 @@ button {
 }
 .volume {
   width: 100%;
+  accent-color: #0c2f35;
 }
 .toast {
   position: fixed;
@@ -2173,7 +2174,7 @@ html {
 .mood-choice,
 .mood-choice:nth-child(even) {
   min-height: 220px;
-  border-radius: 26px;
+  border-radius: 999px;
   padding: 28px;
   justify-content: flex-end;
   overflow: hidden;
@@ -2267,7 +2268,7 @@ html {
   .mood-choice,
   .mood-choice:nth-child(even) {
     min-height: 180px;
-    border-radius: 20px;
+    border-radius: 999px;
     padding: 20px;
   }
   .mood-choice strong {
@@ -2293,7 +2294,7 @@ html {
   .mood-choice,
   .mood-choice:nth-child(even) {
     min-height: 145px;
-    border-radius: 18px !important;
+    border-radius: 999px !important;
   }
   .mood-choice strong {
     font-size: 23px;
