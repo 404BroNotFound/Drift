@@ -67,3 +67,67 @@
 }
 .cloud { opacity: .82; box-shadow: 0 22px 45px #536d7b24; }
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important}.scene{transition:none}}
+
+/* Keep the rain on its own compositor layer and make each loop join seamlessly. */
+.rainfall {
+  animation-duration: .9s;
+  filter: none;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  contain: paint;
+}
+@keyframes rain {
+  to { transform: translate3d(14.85px, 130px, 0); }
+}
+
+/* Cinematic visual-escape artwork. The original CSS elements remain as subtle
+   motion layers, while the generated photography provides texture and depth. */
+.scene {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  transition: opacity 1.2s ease, transform 16s ease-out;
+}
+.ocean { background-image: url("../assets/visual-escapes/moonlit-ocean.png"); }
+.rain { background-image: url("../assets/visual-escapes/rainy-window.png"); }
+.forest { background-image: url("../assets/visual-escapes/forest-dawn.png"); }
+.aurora { background-image: url("../assets/visual-escapes/aurora-night.png"); }
+.embers { background-image: url("../assets/visual-escapes/quiet-embers.png"); }
+.clouds { background-image: url("../assets/visual-escapes/above-clouds.png"); }
+
+.scene::after {
+  z-index: 2;
+  background:
+    linear-gradient(90deg, #03131dbc 0%, #0618205e 34%, transparent 68%),
+    linear-gradient(0deg, #020d13a8 0%, transparent 42%);
+  mix-blend-mode: normal;
+}
+.moon, .stars, .window, .lamp, .sun, .trees, .trees.back, .trees.front, .mountains { opacity: 0; }
+.sea { opacity: .13; mix-blend-mode: screen; }
+.rainfall { opacity: .18; mix-blend-mode: screen; }
+.aurora-band { opacity: .12; mix-blend-mode: screen; }
+.fire { opacity: .16; mix-blend-mode: screen; }
+.cloud { opacity: .08; mix-blend-mode: screen; }
+.mist { opacity: .14; }
+
+@media (max-width: 800px) {
+  .scene { background-position: 62% center; }
+  .rain, .embers { background-position: 70% center; }
+}
+
+/* Fullscreen is a distraction-free viewing mode. Press Escape to leave it. */
+.escape:fullscreen,
+.escape:-webkit-full-screen {
+  cursor: none;
+}
+.escape:fullscreen > :not(.scene),
+.escape:-webkit-full-screen > :not(.scene) {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.escape:fullscreen .scene::after,
+.escape:-webkit-full-screen .scene::after {
+  opacity: 0;
+}
