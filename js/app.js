@@ -937,11 +937,11 @@ function updatePlayer(s) {
   syncPlayButtons();
 }
 function syncPlayButtons() {
-  playBtn.textContent = playing ? "Ⅱ" : "▶";
+  playBtn.textContent = playing ? "⏸" : "▶";
   playBtn.setAttribute("aria-label", playing ? "Pause" : "Play");
   document.querySelectorAll(".card-play").forEach((button) => {
     const isActive = button === activePlayButton && playing;
-    button.textContent = isActive ? "Ⅱ" : "▶";
+    button.textContent = isActive ? "⏸" : "▶";
     button.setAttribute("aria-label", isActive ? "Pause sound" : "Play sound");
   });
 }
