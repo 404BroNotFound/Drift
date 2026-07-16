@@ -82,7 +82,7 @@ button {
 .hero {
   height: min(850px, 100vh);
   min-height: 700px;
-  background: url("assets/drift-hero.png") center/cover no-repeat;
+  background: url("../assets/drift-hero.png") center/cover no-repeat;
   color: white;
   position: relative;
   display: flex;

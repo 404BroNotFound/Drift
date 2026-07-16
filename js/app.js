@@ -338,7 +338,7 @@ const sounds = [
   {
     title: "Theta Dreams",
     cat: "Sleep",
-    mood: "Theta pulse · Dreamy drift",
+    mood: "Theta pulse · Dreamy Drift",
     icon: "θ",
     bg: "radial-gradient(circle at 65% 25%,#8d83aa,#4b456e 42%,#1a1d3b)",
     type: "theta",
