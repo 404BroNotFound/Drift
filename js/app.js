@@ -608,6 +608,7 @@ let filtered = [...sounds],
   muted = false,
   visibleCount = 12;
 let sonicVariation = 1;
+let activePlayButton = null;
 const saved = new Set(
   JSON.parse(localStorage.getItem("drift-favorites") || "[]"),
 );
@@ -891,7 +892,7 @@ function buildSound(s) {
   if (t === "rainpiano")
     repeatMelody([261.63, 329.63, 392, 329.63], 3.7, "triangle", 0.045);
 }
-function startSound(s) {
+function startSound(s, sourceButton = null) {
   stopNodes();
   ctx ||= new (window.AudioContext || window.webkitAudioContext)();
   if (ctx.state === "suspended") ctx.resume();
@@ -905,6 +906,9 @@ function startSound(s) {
   buildSound(s);
   playing = true;
   current = sounds.indexOf(s);
+  activePlayButton = sourceButton?.classList.contains("card-play")
+    ? sourceButton
+    : null;
   seconds = 0;
   clearInterval(tick);
   tick = setInterval(() => {
@@ -930,7 +934,16 @@ function updatePlayer(s) {
   document.querySelector("#nowTitle").textContent = s.title;
   document.querySelector("#nowCategory").textContent = s.mood;
   document.querySelector("#nowArt").textContent = s.icon;
-  playBtn.textContent = "Ⅱ";
+  syncPlayButtons();
+}
+function syncPlayButtons() {
+  playBtn.textContent = playing ? "Ⅱ" : "▶";
+  playBtn.setAttribute("aria-label", playing ? "Pause" : "Play");
+  document.querySelectorAll(".card-play").forEach((button) => {
+    const isActive = button === activePlayButton && playing;
+    button.textContent = isActive ? "Ⅱ" : "▶";
+    button.setAttribute("aria-label", isActive ? "Pause sound" : "Play sound");
+  });
 }
 function toggle() {
   if (!ctx || !nodes.length) return startSound(sounds[current]);
@@ -938,13 +951,13 @@ function toggle() {
     ctx.suspend();
     playing = false;
     player.classList.remove("playing");
-    playBtn.textContent = "▶";
+    syncPlayButtons();
     clearInterval(tick);
   } else {
     ctx.resume();
     playing = true;
     player.classList.add("playing");
-    playBtn.textContent = "Ⅱ";
+    syncPlayButtons();
     tick = setInterval(() => {
       seconds++;
       document.querySelector("#timer").textContent =
@@ -954,7 +967,14 @@ function toggle() {
 }
 grid.addEventListener("click", (e) => {
   const p = e.target.closest("[data-play]");
-  if (p) startSound(filtered[+p.dataset.play]);
+  if (p) {
+    const selectedSound = filtered[+p.dataset.play];
+    if (p === activePlayButton && current === sounds.indexOf(selectedSound)) {
+      toggle();
+    } else {
+      startSound(selectedSound, p);
+    }
+  }
   const h = e.target.closest("[data-save]");
   if (h) {
     saved.has(h.dataset.save)
