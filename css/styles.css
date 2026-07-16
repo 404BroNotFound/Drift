@@ -436,7 +436,7 @@ button {
 }
 .toast {
   position: fixed;
-  right: 24px;
+  right: 80px;
   bottom: 105px;
   background: #0c2f35;
   color: white;
@@ -2057,6 +2057,9 @@ footer .logo-image {
   }
 }
 @media (max-width: 600px) {
+  .toast {
+    right: 68px;
+  }
   .mood-launcher {
     padding: 70px 18px;
   }

@@ -1188,16 +1188,6 @@ releaseNote.oninput = () => {
   noteCount.textContent = releaseNote.value.length;
   localStorage.setItem("drift-release-note", releaseNote.value);
 };
-document.querySelector("#saveNote").onclick = () => {
-  localStorage.setItem("drift-release-note", releaseNote.value);
-  if (releaseNote.value) {
-    effectTone(392, 659.25, 0.75, 0.04);
-    setTimeout(() => effectTone(523.25, 784, 0.7, 0.03), 140);
-  }
-  showToast(
-    releaseNote.value ? "Kept privately on this device" : "Your note is empty",
-  );
-};
 document.querySelector("#releaseNoteButton").onclick = () => {
   if (!releaseNote.value) return showToast("There is nothing to release");
   effectTone(660, 165, 1.3, 0.05, "triangle");
