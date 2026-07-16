@@ -89,6 +89,35 @@
   background-size: cover;
   transition: opacity 1.2s ease, transform 16s ease-out;
 }
+.scene-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  background: #071f27;
+}
+.scene,
+.scene.active { transform: none; }
+.ocean .scene-video { filter: brightness(.76) contrast(1.08) saturate(.78); }
+.rain .scene-video { filter: brightness(.72) contrast(1.06) saturate(.72) hue-rotate(5deg); }
+.forest .scene-video { filter: brightness(.76) contrast(1.04) saturate(.82); }
+.aurora .scene-video { filter: brightness(.78) contrast(1.08) saturate(.82); }
+.embers .scene-video { filter: brightness(.72) contrast(1.08) saturate(.86); }
+.clouds .scene-video { filter: brightness(.72) contrast(1.04) saturate(.7); }
+.footage-credit {
+  position: absolute;
+  z-index: 8;
+  right: 4vw;
+  bottom: 112px;
+  color: #d4e0de8a;
+  font-size: 7px;
+  letter-spacing: 1px;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+.footage-credit a { color: inherit; }
 .ocean { background-image: url("../assets/visual-escapes/moonlit-ocean.png"); }
 .rain { background-image: url("../assets/visual-escapes/rainy-window.png"); }
 .forest { background-image: url("../assets/visual-escapes/forest-dawn.png"); }
@@ -114,6 +143,7 @@
 @media (max-width: 800px) {
   .scene { background-position: 62% center; }
   .rain, .embers { background-position: 70% center; }
+  .footage-credit { display: none; }
 }
 
 /* Fullscreen is a distraction-free viewing mode. Press Escape to leave it. */
