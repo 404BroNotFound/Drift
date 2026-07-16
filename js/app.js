@@ -1180,13 +1180,14 @@ document.querySelector("#clearRipples").onclick = () => {
 };
 
 const releaseNote = document.querySelector("#releaseNote"),
-noteCount = document.querySelector("#noteCount"),
+  noteCount = document.querySelector("#noteCount"),
   releaseStage = document.querySelector(".release-stage");
 releaseNote.value = localStorage.getItem("drift-release-note") || "";
 noteCount.textContent = releaseNote.value.length;
-releaseNote.oninput = () => (noteCount.textContent = releaseNote.value.length);
-
-
+releaseNote.oninput = () => {
+  noteCount.textContent = releaseNote.value.length;
+  localStorage.setItem("drift-release-note", releaseNote.value);
+};
 document.querySelector("#saveNote").onclick = () => {
   localStorage.setItem("drift-release-note", releaseNote.value);
   if (releaseNote.value) {
