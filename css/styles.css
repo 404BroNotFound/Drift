@@ -2241,6 +2241,16 @@ html {
   display: block;
   max-width: 100%;
 }
+.mood-choice .mood-content {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 78%;
+  max-width: none;
+  margin: 0;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
 .mood-choice strong {
   font-size: 30px;
   line-height: 1.1;
