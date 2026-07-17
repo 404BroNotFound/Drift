@@ -604,6 +604,41 @@ for (let i = sounds.length; i < 1500; i++) {
     seed: i,
   });
 }
+const relaxingTracks = [
+  {
+    title: "Theta Ocean",
+    artist: "a2m",
+    url: "https://archive.org/download/a2m-dusk-relaxation_201706/2-a2m-theta-ocean.mp3",
+  },
+  {
+    title: "Drift to Sleep",
+    artist: "Adam Lullaby",
+    url: "https://archive.org/download/jamendo-638715/01-2327038-Adam%20Lullaby-Baby%20Sharks%20Drift%20to%20Sleep.mp3",
+  },
+  {
+    title: "Deep Blue Ocean",
+    artist: "Konstantin Pazuzu Studio",
+    url: "https://archive.org/download/jamendo-638462/01-2326430-KonstantinPazuzuStudio-Deep%20Blue%20Ocean.mp3",
+  },
+  {
+    title: "First Rumble",
+    artist: "Konstantin Pazuzu Studio",
+    url: "https://archive.org/download/jamendo-638544/01-2326577-KonstantinPazuzuStudio-First%20Rumble.mp3",
+  },
+  {
+    title: "Belief in Yourself Meditation",
+    artist: "Ashot Danielyan",
+    url: "https://archive.org/download/jamendo-524183/01-2034075-Ashot_Danielyan_Composer-Belief%20In%20Yourself%20Meditation.mp3",
+  },
+  {
+    title: "Ocean Harp",
+    artist: "Konstantin Pazuzu Studio",
+    url: "https://archive.org/download/jamendo-638462/01-2326430-KonstantinPazuzuStudio-Deep%20Blue%20Ocean.mp3",
+  },
+];
+sounds.forEach((sound, index) => {
+  sound.recording = relaxingTracks[(sound.seed ?? index) % relaxingTracks.length];
+});
 let filtered = [...sounds],
   current = 0,
   playing = false,
@@ -615,6 +650,9 @@ let filtered = [...sounds],
   tick,
   muted = false,
   visibleCount = 12;
+const recordedAudio = new Audio();
+recordedAudio.loop = true;
+recordedAudio.preload = "metadata";
 let sonicVariation = 1;
 let activePlayButton = null;
 const saved = new Set(
@@ -902,16 +940,16 @@ function buildSound(s) {
 }
 function startSound(s, sourceButton = null) {
   stopNodes();
-  ctx ||= new (window.AudioContext || window.webkitAudioContext)();
-  if (ctx.state === "suspended") ctx.resume();
-  sonicVariation = Math.pow(
-    2,
-    ((((s.seed || sounds.indexOf(s)) * 7) % 9) - 4) / 24,
-  );
-  master = ctx.createGain();
-  master.gain.value = +document.querySelector("#volume").value * 0.95;
-  master.connect(ctx.destination);
-  buildSound(s);
+  const recording = s.recording || relaxingTracks[0];
+  recordedAudio.src = recording.url;
+  recordedAudio.volume = muted
+    ? 0
+    : +document.querySelector("#volume").value * 0.55;
+  recordedAudio.play().catch(() => {
+    playing = false;
+    player.classList.remove("playing");
+    syncPlayButtons();
+  });
   playing = true;
   current = sounds.indexOf(s);
   activePlayButton = sourceButton?.classList.contains("card-play")
@@ -927,6 +965,8 @@ function startSound(s, sourceButton = null) {
   updatePlayer(s);
 }
 function stopNodes() {
+  recordedAudio.pause();
+  recordedAudio.currentTime = 0;
   nodes.forEach((n) => {
     try {
       n.stop?.();
@@ -940,7 +980,8 @@ function stopNodes() {
 function updatePlayer(s) {
   player.classList.add("visible", "playing");
   document.querySelector("#nowTitle").textContent = s.title;
-  document.querySelector("#nowCategory").textContent = s.mood;
+  document.querySelector("#nowCategory").textContent =
+    `${s.recording.title} · ${s.recording.artist}`;
   document.querySelector("#nowArt").textContent = s.icon;
   syncPlayButtons();
 }
@@ -954,15 +995,15 @@ function syncPlayButtons() {
   });
 }
 function toggle() {
-  if (!ctx || !nodes.length) return startSound(sounds[current]);
-  if (ctx.state === "running") {
-    ctx.suspend();
+  if (!recordedAudio.src) return startSound(sounds[current]);
+  if (!recordedAudio.paused) {
+    recordedAudio.pause();
     playing = false;
     player.classList.remove("playing");
     syncPlayButtons();
     clearInterval(tick);
   } else {
-    ctx.resume();
+    recordedAudio.play();
     playing = true;
     player.classList.add("playing");
     syncPlayButtons();
@@ -1056,14 +1097,13 @@ document.querySelector("#nextBtn").onclick = () =>
 document.querySelector("#prevBtn").onclick = () =>
   startSound(sounds[(current - 1 + sounds.length) % sounds.length]);
 document.querySelector("#volume").oninput = (e) => {
-  if (master) master.gain.value = +e.target.value * 0.95;
+  recordedAudio.volume = muted ? 0 : +e.target.value * 0.55;
 };
 document.querySelector("#volumeBtn").onclick = () => {
   muted = !muted;
-  if (master)
-    master.gain.value = muted
-      ? 0
-      : +document.querySelector("#volume").value * 0.95;
+  recordedAudio.volume = muted
+    ? 0
+    : +document.querySelector("#volume").value * 0.55;
   document.querySelector("#volumeBtn").textContent = muted ? "○" : "◕";
 };
 document.querySelector("#wave").innerHTML = Array.from(
@@ -1173,17 +1213,71 @@ function makeRipple(x, y) {
   rippleStage.appendChild(ripple);
   setTimeout(() => ripple.remove(), 2500);
 }
+function playWaterRipple(size = 0.5) {
+  if (!effectsOn) return;
+  fxCtx ||= new (window.AudioContext || window.webkitAudioContext)();
+  fxCtx.resume();
+  const now = fxCtx.currentTime;
+
+  // A tiny filtered splash gives the drop a real, wet attack.
+  const splashLength = Math.floor(fxCtx.sampleRate * 0.16);
+  const splashBuffer = fxCtx.createBuffer(1, splashLength, fxCtx.sampleRate);
+  const splashData = splashBuffer.getChannelData(0);
+  for (let i = 0; i < splashLength; i++) {
+    const envelope = Math.exp((-i / splashLength) * 10);
+    splashData[i] = (Math.random() * 2 - 1) * envelope;
+  }
+  const splash = fxCtx.createBufferSource();
+  const splashFilter = fxCtx.createBiquadFilter();
+  const splashGain = fxCtx.createGain();
+  splash.buffer = splashBuffer;
+  splashFilter.type = "bandpass";
+  splashFilter.frequency.value = 1250 + size * 650;
+  splashFilter.Q.value = 0.65;
+  splashGain.gain.setValueAtTime(0.035, now);
+  splashGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+  splash.connect(splashFilter).connect(splashGain).connect(fxCtx.destination);
+  splash.start(now);
+
+  // A fast downward resonance creates the rounded "plop" of a water ripple.
+  const body = fxCtx.createOscillator();
+  const bodyGain = fxCtx.createGain();
+  body.type = "sine";
+  body.frequency.setValueAtTime(620 - size * 150, now);
+  body.frequency.exponentialRampToValueAtTime(165 - size * 35, now + 0.22);
+  bodyGain.gain.setValueAtTime(0.0001, now);
+  bodyGain.gain.exponentialRampToValueAtTime(0.065, now + 0.008);
+  bodyGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.34);
+  body.connect(bodyGain).connect(fxCtx.destination);
+  body.start(now);
+  body.stop(now + 0.36);
+
+  // Quiet follow-up droplets keep repeated taps organic instead of beep-like.
+  [0.085, 0.145].forEach((delay, index) => {
+    const drop = fxCtx.createOscillator();
+    const dropGain = fxCtx.createGain();
+    const start = now + delay;
+    drop.type = "sine";
+    drop.frequency.setValueAtTime(760 + index * 90, start);
+    drop.frequency.exponentialRampToValueAtTime(310, start + 0.08);
+    dropGain.gain.setValueAtTime(0.0001, start);
+    dropGain.gain.exponentialRampToValueAtTime(0.012, start + 0.005);
+    dropGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.1);
+    drop.connect(dropGain).connect(fxCtx.destination);
+    drop.start(start);
+    drop.stop(start + 0.11);
+  });
+}
 rippleStage.onclick = (e) => {
   const box = rippleStage.getBoundingClientRect(),
     x = e.clientX - box.left,
     y = e.clientY - box.top;
   makeRipple(x, y);
-  const pitch = 420 + (1 - y / box.height) * 420;
-  effectTone(pitch, pitch * 0.72, 0.8, 0.045);
+  playWaterRipple(y / box.height);
 };
 document.querySelector("#clearRipples").onclick = () => {
   rippleStage.querySelectorAll(".ripple").forEach((r) => r.remove());
-  effectTone(620, 310, 1, 0.035);
+  playWaterRipple(0.85);
   showToast("The water is still again");
 };
 
