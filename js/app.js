@@ -584,7 +584,7 @@ const generatedColors = [
   ["#a6b6bd", "#526c78", "#203541"],
   ["#c8a47c", "#805e55", "#35414a"],
 ];
-for (let i = sounds.length; i < 1500; i++) {
+for (let i = sounds.length; i < 60; i++) {
   const model = generatedModels[i % generatedModels.length],
     colors = generatedColors[(i * 7) % generatedColors.length];
   const a = titleOpeners[i % titleOpeners.length],
@@ -783,13 +783,12 @@ let filtered = [...sounds],
   seconds = 0,
   tick,
   muted = false,
-  windowStart = 0,
   visibleCount = 12;
 const PAGE_SIZE = 12;
-const MAX_RENDERED_CARDS = 36;
 const recordedAudio = new Audio();
 recordedAudio.loop = true;
 recordedAudio.preload = "metadata";
+let playbackRequest = 0;
 let sonicVariation = 1;
 let activePlayButton = null;
 const saved = new Set(
@@ -800,13 +799,12 @@ const grid = document.querySelector("#soundGrid"),
   playBtn = document.querySelector("#playBtn");
 function render() {
   visibleCount = Math.min(visibleCount, filtered.length);
-  windowStart = Math.min(windowStart, Math.max(0, visibleCount - PAGE_SIZE));
-  const shown = filtered.slice(windowStart, visibleCount);
+  const shown = filtered.slice(0, visibleCount);
   grid.innerHTML = shown.length
     ? shown
         .map(
           (s, i) =>
-            `<article class="card" style="--bg:${s.bg}"><div class="card-top"><span class="tag">${s.cat.toUpperCase()}</span><button class="heart ${saved.has(s.title) ? "saved" : ""}" data-save="${s.title}" aria-label="Save ${s.title}">${saved.has(s.title) ? "♥" : "♡"}</button></div><h3>${s.title}</h3><p>${s.mood}</p><button class="card-play" data-play="${windowStart + i}" aria-label="Play ${s.title}">▶</button></article>`,
+            `<article class="card" style="--bg:${s.bg}"><div class="card-top"><span class="tag">${s.cat.toUpperCase()}</span><button class="heart ${saved.has(s.title) ? "saved" : ""}" data-save="${s.title}" aria-label="Save ${s.title}">${saved.has(s.title) ? "♥" : "♡"}</button></div><h3>${s.title}</h3><p>${s.mood}</p><button class="card-play" data-play="${i}" aria-label="Play ${s.title}">▶</button></article>`,
         )
         .join("")
     : `<div class="empty">${document.querySelector(".filter.active")?.dataset.filter === "Favorites" ? "No favorites yet. Tap the heart on any sound to keep it here." : "No sounds found. Try another mood."}</div>`;
@@ -818,40 +816,54 @@ function render() {
     .classList.toggle("hidden", visibleCount >= filtered.length);
 }
 function resetCardWindow() {
-  windowStart = 0;
   visibleCount = PAGE_SIZE;
 }
 function loadNextCardPage() {
   if (visibleCount >= filtered.length) return;
   visibleCount = Math.min(filtered.length, visibleCount + PAGE_SIZE);
-  if (visibleCount - windowStart > MAX_RENDERED_CARDS) {
-    const nextStart = windowStart + PAGE_SIZE;
-    const anchor = grid.querySelector(`[data-play="${nextStart}"]`)?.closest(".card");
-    const before = anchor?.getBoundingClientRect().top;
-    windowStart = nextStart;
-    render();
-    const restored = grid.querySelector(`[data-play="${nextStart}"]`)?.closest(".card");
-    if (before != null && restored) {
-      window.scrollBy(0, restored.getBoundingClientRect().top - before);
-    }
-    return;
-  }
   render();
-}
-function loadPreviousCardPage() {
-  if (windowStart <= 0) return;
-  const anchorIndex = windowStart;
-  const anchor = grid.querySelector(`[data-play="${anchorIndex}"]`)?.closest(".card");
-  const before = anchor?.getBoundingClientRect().top;
-  windowStart = Math.max(0, windowStart - PAGE_SIZE);
-  visibleCount = Math.min(filtered.length, windowStart + MAX_RENDERED_CARDS);
-  render();
-  const restored = grid.querySelector(`[data-play="${anchorIndex}"]`)?.closest(".card");
-  if (before != null && restored) {
-    window.scrollBy(0, restored.getBoundingClientRect().top - before);
-  }
 }
 render();
+async function loadExpandedCatalog() {
+  try {
+    const response = await fetch("../assets/data/tracks.json");
+    if (!response.ok) throw new Error("Catalog unavailable");
+    const catalog = await response.json();
+    const colors = [
+      ["#8aa9a2", "#315c62", "#112f39"],
+      ["#b39a83", "#685b56", "#29383e"],
+      ["#9a91ac", "#555472", "#222b47"],
+      ["#b9b58e", "#66795e", "#2d4b49"],
+      ["#a6b6bd", "#526c78", "#203541"],
+      ["#c8a47c", "#805e55", "#35414a"],
+    ];
+    const icons = ["○", "≈", "✦", "☾", "∿", "◇", "◌", "♪"];
+    const expanded = catalog.map((track, index) => {
+      const palette = colors[index % colors.length];
+      const category = track.genre === "Meditation"
+        ? "Meditate"
+        : track.genre === "Ambient"
+          ? "Sleep"
+          : "Focus";
+      return {
+        title: track.title,
+        cat: category,
+        mood: `${track.genre} · ${track.mood}`,
+        icon: icons[index % icons.length],
+        bg: `radial-gradient(circle at ${30 + (index % 45)}% ${20 + (index % 35)}%,${palette[0]},${palette[1]} 45%,${palette[2]})`,
+        seed: index,
+        recording: track,
+      };
+    });
+    sounds.splice(0, sounds.length, ...expanded);
+    filtered = [...sounds];
+    resetCardWindow();
+    render();
+  } catch (error) {
+    console.warn("Using the built-in offline catalog.", error);
+  }
+}
+loadExpandedCatalog();
 function noise(color = "white") {
   const length = ctx.sampleRate * 3,
     b = ctx.createBuffer(1, length, ctx.sampleRate),
@@ -1111,23 +1123,46 @@ function buildSound(s) {
   if (t === "rainpiano")
     repeatMelody([261.63, 329.63, 392, 329.63], 3.7, "triangle", 0.045);
 }
-function startSound(s, sourceButton = null) {
+async function resolveRecordingUrl(recording) {
+  if (recording.url) return recording.url;
+  const response = await fetch(`https://archive.org/metadata/${recording.identifier}`);
+  if (!response.ok) throw new Error("Track metadata unavailable");
+  const metadata = await response.json();
+  const file = metadata.files.find(
+    (item) => item.source === "original" && /\.mp3$/i.test(item.name),
+  ) || metadata.files.find((item) => /\.mp3$/i.test(item.name));
+  if (!file) throw new Error("No playable MP3 was found");
+  const filePath = file.name.split("/").map(encodeURIComponent).join("/");
+  recording.url = `https://archive.org/download/${recording.identifier}/${filePath}`;
+  return recording.url;
+}
+async function startSound(s, sourceButton = null) {
+  const request = ++playbackRequest;
   stopNodes();
   const recording = s.recording || relaxingTracks[0];
-  recordedAudio.src = recording.url;
-  recordedAudio.volume = muted
-    ? 0
-    : +document.querySelector("#volume").value * 0.55;
-  recordedAudio.play().catch(() => {
-    playing = false;
-    player.classList.remove("playing");
-    syncPlayButtons();
-  });
-  playing = true;
   current = sounds.indexOf(s);
   activePlayButton = sourceButton?.classList.contains("card-play")
     ? sourceButton
     : null;
+  updatePlayer(s);
+  document.querySelector("#nowCategory").textContent = "Loading recording…";
+  try {
+    const url = await resolveRecordingUrl(recording);
+    if (request !== playbackRequest) return;
+    recordedAudio.src = url;
+    recordedAudio.volume = muted
+      ? 0
+      : +document.querySelector("#volume").value * 0.55;
+    await recordedAudio.play();
+  } catch (error) {
+    if (request !== playbackRequest) return;
+    playing = false;
+    player.classList.remove("playing");
+    syncPlayButtons();
+    document.querySelector("#nowCategory").textContent = "This recording is temporarily unavailable";
+    return;
+  }
+  playing = true;
   seconds = 0;
   clearInterval(tick);
   tick = setInterval(() => {
@@ -1253,25 +1288,6 @@ if ("IntersectionObserver" in window) {
   );
   cardLoader.observe(loadMoreButton);
 }
-let previousLibraryScrollY = window.scrollY;
-let restoringPreviousCards = false;
-window.addEventListener(
-  "scroll",
-  () => {
-    const movingUp = window.scrollY < previousLibraryScrollY;
-    previousLibraryScrollY = window.scrollY;
-    if (!movingUp || windowStart <= 0 || restoringPreviousCards) return;
-    const firstCard = grid.querySelector(".card");
-    if (!firstCard || firstCard.getBoundingClientRect().top < -120) return;
-    restoringPreviousCards = true;
-    loadPreviousCardPage();
-    requestAnimationFrame(() => {
-      previousLibraryScrollY = window.scrollY;
-      restoringPreviousCards = false;
-    });
-  },
-  { passive: true },
-);
 document.querySelectorAll(".playlist-card").forEach(
   (card) =>
     (card.onclick = () => {

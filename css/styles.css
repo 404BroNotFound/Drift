@@ -241,6 +241,8 @@ button {
 }
 .card {
   min-height: 310px;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 310px;
   border-radius: 4px;
   color: white;
   position: relative;
