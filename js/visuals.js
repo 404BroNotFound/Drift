@@ -61,13 +61,26 @@ const scenes = {
   },
 };
 
+const pexelsVideo = (id) => `https://www.pexels.com/download/video/${id}/`;
+const videoPlaylists = {
+  ocean: ["../assets/videos/ocean.mp4", pexelsVideo(5560759), pexelsVideo(9691330), pexelsVideo(34962292), pexelsVideo(11049826)],
+  rain: ["../assets/videos/rain-static.mp4", "../assets/videos/rain.mp4", pexelsVideo(34786652), pexelsVideo(37623808), pexelsVideo(34977395)],
+  forest: ["../assets/videos/forest.mp4", pexelsVideo(35821946), pexelsVideo(30762707), pexelsVideo(36805605), pexelsVideo(15346324)],
+  aurora: ["../assets/videos/aurora.mp4", pexelsVideo(11860943), pexelsVideo(5701989), pexelsVideo(28889010), pexelsVideo(5600930)],
+  embers: ["../assets/videos/embers.mp4", pexelsVideo(10602611), pexelsVideo(3558454), pexelsVideo(4169071), pexelsVideo(7330175)],
+  clouds: ["../assets/videos/clouds.mp4", pexelsVideo(5306292), pexelsVideo(5537270), pexelsVideo(5739824), pexelsVideo(2602910)],
+};
+
 let current = "ocean";
 let playing = false;
 let elapsed = 0;
 let timer;
 let fadeTimer;
+let videoPlaylistIndex = 0;
+let preloadedVideo;
+let pendingVideoAdvance = false;
 const visualAudio = new Audio();
-visualAudio.loop = true;
+visualAudio.loop = false;
 visualAudio.preload = "metadata";
 
 document.querySelector("#visualWave").innerHTML = Array.from(
@@ -90,6 +103,9 @@ function startAudio() {
   visualAudio.pause();
   visualAudio.src = track.url;
   visualAudio.volume = 0;
+  elapsed = 0;
+  document.querySelector("#sessionTime").textContent = "00:00";
+  resetVideoPlaylist(current, true);
   visualAudio.play().catch(() => {
     playing = false;
     document.querySelector("#escape").classList.remove("playing");
@@ -111,9 +127,10 @@ function startAudio() {
 }
 
 function toggleAudio() {
-  if (!visualAudio.src) return startAudio();
+  if (!visualAudio.src || visualAudio.ended) return startAudio();
   if (!visualAudio.paused) {
     visualAudio.pause();
+    activeSceneVideo()?.pause();
     playing = false;
     clearInterval(timer);
     document.querySelector("#escape").classList.remove("playing");
@@ -121,6 +138,7 @@ function toggleAudio() {
     document.querySelector("#trackState").textContent = "PAUSED";
   } else {
     visualAudio.play();
+    activeSceneVideo()?.play().catch(() => {});
     playing = true;
     document.querySelector("#escape").classList.add("playing");
     document.querySelector("#playVisual").textContent = "⏸";
@@ -129,14 +147,95 @@ function toggleAudio() {
   }
 }
 
+function activeSceneVideo() {
+  return document.querySelector(`.scene[data-scene="${current}"] .scene-video`);
+}
+
+function setSceneVideoSource(video, source, autoplay = true) {
+  const sourceElement = video.querySelector("source");
+  if (sourceElement.getAttribute("src") !== source) {
+    sourceElement.setAttribute("src", source);
+    video.load();
+  } else if (video.ended) {
+    video.currentTime = 0;
+  }
+  video.loop = false;
+  video.playbackRate = 1;
+  if (autoplay) {
+    video.play().catch(() => advanceSceneVideo());
+    preloadNextSceneVideo();
+  }
+}
+
+function resetVideoPlaylist(name, autoplay = false) {
+  videoPlaylistIndex = 0;
+  preloadedVideo = null;
+  pendingVideoAdvance = false;
+  const video = document.querySelector(`.scene[data-scene="${name}"] .scene-video`);
+  if (video) setSceneVideoSource(video, videoPlaylists[name][0], autoplay);
+}
+
+function preloadNextSceneVideo() {
+  const nextSource = videoPlaylists[current][videoPlaylistIndex + 1];
+  if (!nextSource || preloadedVideo?.dataset.source === nextSource) return;
+  preloadedVideo = document.createElement("video");
+  preloadedVideo.preload = "auto";
+  preloadedVideo.muted = true;
+  preloadedVideo.playsInline = true;
+  preloadedVideo.dataset.source = nextSource;
+  preloadedVideo.dataset.scene = current;
+  preloadedVideo.dataset.index = String(videoPlaylistIndex + 1);
+  preloadedVideo.src = nextSource;
+  const candidate = preloadedVideo;
+  candidate.addEventListener("canplay", () => {
+    if (preloadedVideo === candidate && pendingVideoAdvance) commitPreloadedVideo();
+  }, { once: true });
+  candidate.addEventListener("error", () => {
+    if (preloadedVideo !== candidate || candidate.dataset.scene !== current) return;
+    videoPlaylistIndex = Number(candidate.dataset.index);
+    preloadedVideo = null;
+    preloadNextSceneVideo();
+  }, { once: true });
+  candidate.load();
+}
+
+function commitPreloadedVideo() {
+  if (!preloadedVideo || preloadedVideo.dataset.scene !== current) return false;
+  if (preloadedVideo.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) return false;
+  const source = preloadedVideo.dataset.source;
+  videoPlaylistIndex = Number(preloadedVideo.dataset.index);
+  preloadedVideo = null;
+  pendingVideoAdvance = false;
+  setSceneVideoSource(activeSceneVideo(), source, true);
+  document.querySelector("#trackState").textContent = "NOW DRIFTING";
+  return true;
+}
+
+function advanceSceneVideo() {
+  if (!playing) return;
+  const playlist = videoPlaylists[current];
+  if (videoPlaylistIndex >= playlist.length - 1) {
+    document.querySelector("#trackState").textContent = "FINAL VISUAL · MUSIC CONTINUES";
+    return;
+  }
+  if (commitPreloadedVideo()) return;
+  pendingVideoAdvance = true;
+  const video = activeSceneVideo();
+  video.loop = true;
+  video.currentTime = 0;
+  video.play().catch(() => {});
+  document.querySelector("#trackState").textContent = "PREPARING NEXT VISUAL";
+  preloadNextSceneVideo();
+}
+
 function syncSceneVideos(name, restart = false) {
   document.querySelectorAll(".scene").forEach((scene) => {
     const video = scene.querySelector(".scene-video");
     if (!video) return;
-    video.playbackRate = 0.72;
+    video.playbackRate = 1;
     if (scene.dataset.scene === name) {
       if (video.readyState === 0) video.load();
-      if (restart) video.currentTime = 0;
+      if (restart || video.ended) video.currentTime = 0;
       video.play().catch(() => {});
     } else video.pause();
   });
@@ -147,6 +246,7 @@ function switchScene(name) {
   document.querySelectorAll(".scene").forEach((scene) =>
     scene.classList.toggle("active", scene.dataset.scene === name),
   );
+  resetVideoPlaylist(name, true);
   syncSceneVideos(name);
   document.querySelectorAll(".scene-option").forEach((button) =>
     button.classList.toggle("active", button.dataset.target === name),
@@ -162,6 +262,26 @@ function switchScene(name) {
 
 document.querySelectorAll(".scene-option").forEach((button) => {
   button.onclick = () => switchScene(button.dataset.target);
+});
+document.querySelectorAll(".scene-video").forEach((video) => {
+  video.addEventListener("playing", () => {
+    if (video === activeSceneVideo()) preloadNextSceneVideo();
+  });
+  video.addEventListener("ended", () => {
+    if (video === activeSceneVideo()) advanceSceneVideo();
+  });
+  video.addEventListener("error", () => {
+    if (video === activeSceneVideo() && playing) advanceSceneVideo();
+  });
+});
+visualAudio.addEventListener("ended", () => {
+  playing = false;
+  pendingVideoAdvance = false;
+  clearInterval(timer);
+  activeSceneVideo()?.pause();
+  document.querySelector("#escape").classList.remove("playing");
+  document.querySelector("#playVisual").textContent = "▶";
+  document.querySelector("#trackState").textContent = "SESSION COMPLETE";
 });
 document.querySelector("#playVisual").onclick = toggleAudio;
 document.querySelector("#visualVolume").oninput = (event) => {

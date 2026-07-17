@@ -98,6 +98,14 @@
   object-position: center;
   background: #071f27;
 }
+
+/* Keep video decoding on a lightweight compositor path. Color treatment is
+   handled by the scene overlay instead of an expensive full-frame filter. */
+.scene .scene-video {
+  filter: none !important;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
 .scene,
 .scene.active { transform: none; }
 .ocean .scene-video { filter: brightness(.76) contrast(1.08) saturate(.78); }
