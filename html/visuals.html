@@ -3,56 +3,95 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#071f27" />
+  <meta name="theme-color" content="#071d22" />
   <title>Visual Escapes — Drift</title>
-  <meta name="description" content="Immersive moving scenes paired with calming generative audio." />
+  <meta name="description" content="Describe a calming place, choose your time, and Drift will pair a relaxing visual with a matching soundscape." />
   <link rel="icon" href="../assets/drift-mark.svg" type="image/svg+xml" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/visuals.css?v=7" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/visuals.css?v=8" />
 </head>
 <body>
-  <main class="escape" id="escape">
-    <div class="scene ocean active" data-scene="ocean"><video class="scene-video" muted playsinline autoplay preload="auto" poster="../assets/visual-escapes/moonlit-ocean.png"><source src="../assets/videos/ocean.mp4" type="video/mp4"></video></div>
-    <div class="scene rain" data-scene="rain"><video class="scene-video" muted playsinline preload="none" poster="../assets/visual-escapes/rainy-window.png"><source src="../assets/videos/rain-static.mp4" type="video/mp4"></video></div>
-    <div class="scene forest" data-scene="forest"><video class="scene-video" muted playsinline preload="none" poster="../assets/visual-escapes/forest-dawn.png"><source src="../assets/videos/forest.mp4" type="video/mp4"></video></div>
-    <div class="scene aurora" data-scene="aurora"><video class="scene-video" muted playsinline preload="none" poster="../assets/visual-escapes/aurora-night.png"><source src="../assets/videos/aurora.mp4" type="video/mp4"></video></div>
-    <div class="scene embers" data-scene="embers"><video class="scene-video" muted playsinline preload="none" poster="../assets/visual-escapes/quiet-embers.png"><source src="../assets/videos/embers.mp4" type="video/mp4"></video></div>
-    <div class="scene clouds" data-scene="clouds"><video class="scene-video" muted playsinline preload="none" poster="../assets/visual-escapes/above-clouds.png"><source src="../assets/videos/clouds.mp4" type="video/mp4"></video></div>
-    <div class="scene-shade"></div>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Drift home"><img src="../assets/drift-logo.svg" alt="Drift" /></a>
+    <span class="page-name">VISUAL ESCAPES</span>
+    <a class="back-link" href="index.html">Back to Drift <span aria-hidden="true">↗</span></a>
+  </header>
 
-    <header>
-      <a href="index.html" class="logo"><img src="../assets/drift-logo.svg" alt="Drift" /></a>
-      <span class="page-label">VISUAL ESCAPES</span>
-      <a href="index.html#library" class="exit">Exit experience <span>×</span></a>
-    </header>
+  <main>
+    <section class="hero" aria-labelledby="pageTitle">
+      <div class="hero-glow" aria-hidden="true"></div>
+      <span class="eyebrow">A PLACE MADE FOR THIS MOMENT</span>
+      <h1 id="pageTitle">Where would you<br />like to <em>drift?</em></h1>
+      <p class="hero-intro">Describe the atmosphere you need. Drift will generate a unique animated video and an original soundscape shaped around your words.</p>
 
-    <section class="scene-copy">
-      <span class="eyebrow" id="sceneNumber">01 · NIGHT OCEAN</span>
-      <h1 id="sceneTitle">Moonlit<br><em>tides.</em></h1>
-      <p id="sceneDescription">Slow waves beneath an open night sky.</p>
+      <form class="escape-builder" id="escapeBuilder">
+        <label for="escapePrompt">DESCRIBE YOUR ESCAPE</label>
+        <div class="prompt-row">
+          <textarea id="escapePrompt" rows="2" maxlength="180" placeholder="A rainy window at night with warm, gentle music…"></textarea>
+          <button type="submit" class="create-button">Generate video + audio <span aria-hidden="true">→</span></button>
+        </div>
+        <div class="prompt-footer">
+          <div class="prompt-ideas" aria-label="Prompt ideas">
+            <button type="button" data-prompt="Slow ocean waves beneath a moonlit sky">Moonlit ocean</button>
+            <button type="button" data-prompt="Rain on a quiet window with soft warm tones">Cozy rain</button>
+            <button type="button" data-prompt="A peaceful forest at first light with birds and breeze">Forest morning</button>
+          </div>
+          <span id="promptCount">0 / 180</span>
+        </div>
+
+        <fieldset class="duration-picker">
+          <legend>HOW LONG DO YOU HAVE?</legend>
+          <label><input type="radio" name="duration" value="180" /><span>3 min</span></label>
+          <label><input type="radio" name="duration" value="300" checked /><span>5 min</span></label>
+          <label><input type="radio" name="duration" value="900" /><span>15 min</span></label>
+          <label><input type="radio" name="duration" value="1800" /><span>30 min</span></label>
+          <label><input type="radio" name="duration" value="3600" /><span>1 hour</span></label>
+          <label><input type="radio" name="duration" value="manual" id="manualDuration" /><span>Manual</span></label>
+          <span class="manual-time" id="manualTime" hidden>
+            <input id="manualTimeValue" type="number" min="10" max="3600" value="10" inputmode="numeric" aria-label="Custom session time" />
+            <select id="manualTimeUnit" aria-label="Custom time unit"><option value="seconds">seconds</option><option value="minutes">minutes</option></select>
+          </span>
+        </fieldset>
+        <p class="builder-note" id="builderNote" role="status">Generated live in your browser · No media upload · No account needed</p>
+      </form>
     </section>
 
-    <aside class="scene-picker" aria-label="Choose a visual escape">
-      <button class="scene-option active" data-target="ocean"><span>01</span><strong>Moonlit Tides</strong><small>Ocean</small></button>
-      <button class="scene-option" data-target="rain"><span>02</span><strong>Rainy Window</strong><small>Rain</small></button>
-      <button class="scene-option" data-target="forest"><span>03</span><strong>Forest Dawn</strong><small>Nature</small></button>
-      <button class="scene-option" data-target="aurora"><span>04</span><strong>Aurora Night</strong><small>Ambient</small></button>
-      <button class="scene-option" data-target="embers"><span>05</span><strong>Quiet Embers</strong><small>Fire</small></button>
-      <button class="scene-option" data-target="clouds"><span>06</span><strong>Above Clouds</strong><small>Air</small></button>
-    </aside>
-
-    <div class="escape-controls">
-      <button id="playVisual" class="main-play" aria-label="Play sound">▶</button>
-      <div class="track"><span id="trackState">READY WHEN YOU ARE</span><strong id="trackName">Moonlit Tides</strong></div>
-      <div class="visual-wave" id="visualWave"></div>
-      <span class="session-time" id="sessionTime">00:00</span>
-      <label class="volume-label">VOL <input id="visualVolume" type="range" min="0" max="1" step=".01" value=".55" /></label>
-      <button id="fullscreen" class="utility" aria-label="Fullscreen">⛶</button>
-    </div>
-    <span class="footage-credit">Footage by <a href="https://coverr.co/" target="_blank" rel="noopener">Coverr</a> &amp; <a href="https://www.pexels.com/" target="_blank" rel="noopener">Pexels creators</a></span>
+    <section class="discover" aria-labelledby="discoverTitle">
+      <div class="section-heading">
+        <div><span class="eyebrow dark">OR BEGIN WITH A SCENE</span><h2 id="discoverTitle">Quiet places, ready when you are.</h2></div>
+        <label class="scene-search"><span aria-hidden="true">⌕</span><input id="sceneSearch" type="search" placeholder="Search ocean, rain, forest…" /></label>
+      </div>
+      <div class="scene-grid" id="sceneGrid"></div>
+      <p class="empty-state" id="emptyState" hidden>No scenes found. Try describing it above and we’ll find the closest match.</p>
+    </section>
   </main>
-  <script src="../js/visuals.js?v=6"></script>
+
+  <section class="experience" id="experience" aria-hidden="true">
+    <video id="escapeVideo" muted playsinline loop preload="metadata"></video>
+    <canvas id="generatedScene" aria-label="A generated animated relaxation scene"></canvas>
+    <div class="experience-shade"></div>
+    <header class="experience-header">
+      <img src="../assets/drift-logo.svg" alt="Drift" />
+      <span id="experienceLabel">YOUR VISUAL ESCAPE</span>
+      <button id="closeExperience" type="button">Leave escape <span aria-hidden="true">×</span></button>
+    </header>
+    <div class="experience-copy">
+      <span id="experienceMood">OCEAN · SLOW TIDE</span>
+      <h2 id="experienceTitle">Moonlit<br /><em>tides.</em></h2>
+      <p id="experienceDescription">Slow waves and a low, open soundscape.</p>
+    </div>
+    <div class="experience-controls">
+      <button id="playPause" class="play-pause" type="button" aria-label="Pause">Ⅱ</button>
+      <div class="track-copy"><span>GENERATED FOR THIS SCENE</span><strong id="soundName">Tidal hush</strong></div>
+      <div class="progress-track" aria-hidden="true"><span id="sessionProgress"></span></div>
+      <span class="time-left" id="timeLeft">05:00 left</span>
+      <label class="volume-control"><span>VOL</span><input id="escapeVolume" type="range" min="0" max="1" step="0.01" value="0.55" /></label>
+      <button id="fullscreen" class="fullscreen" type="button" aria-label="Fullscreen">⛶</button>
+    </div>
+  </section>
+
+  <script src="../js/visuals.js?v=8"></script>
 </body>
 </html>

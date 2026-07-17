@@ -1715,9 +1715,11 @@ const navObserver = new IntersectionObserver((entries) => {
 observedSections.forEach((section) => navObserver.observe(section));
 
 document.addEventListener("keydown", (event) => {
-  const typing = ["INPUT", "TEXTAREA"].includes(document.activeElement.tagName);
-  if (typing || headphoneIntro?.isConnected) return;
-  if (event.code === "Space" && player.classList.contains("visible")) {
+  const focusedControl = event.target.closest(
+    "input, textarea, select, button, a, [contenteditable='true']",
+  );
+  if (focusedControl || headphoneIntro?.isConnected) return;
+  if (event.code === "Space" && !event.repeat) {
     event.preventDefault();
     toggle();
   }
