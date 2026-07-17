@@ -783,8 +783,8 @@ let filtered = [...sounds],
   seconds = 0,
   tick,
   muted = false,
-  visibleCount = 12;
-const PAGE_SIZE = 12;
+  currentPage = 1;
+const PAGE_SIZE = 50;
 const recordedAudio = new Audio();
 recordedAudio.loop = true;
 recordedAudio.preload = "metadata";
@@ -857,30 +857,36 @@ const grid = document.querySelector("#soundGrid"),
   player = document.querySelector("#player"),
   playBtn = document.querySelector("#playBtn");
 function render() {
-  visibleCount = Math.min(visibleCount, filtered.length);
-  const shown = filtered.slice(0, visibleCount);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  currentPage = Math.min(currentPage, pageCount);
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const shown = filtered.slice(pageStart, pageStart + PAGE_SIZE);
   grid.innerHTML = shown.length
     ? shown
         .map(
           (s, i) =>
-            `<article class="card" style="--bg:${s.bg}"><div class="card-top"><span class="tag">${(s.genre || s.cat).toUpperCase()}</span><button class="heart ${saved.has(s.title) ? "saved" : ""}" data-save="${s.title}" aria-label="Save ${s.title}">${saved.has(s.title) ? "♥" : "♡"}</button></div><div class="card-footer"><div class="card-copy"><h3>${s.title}</h3><p>${s.artist || s.recording?.artist || s.mood}</p></div><button class="card-play" data-play="${i}" aria-label="Play ${s.title}">▶</button></div></article>`,
+            `<article class="card" style="--bg:${s.bg}"><div class="card-top"><span class="tag">${(s.genre || s.cat).toUpperCase()}</span><button class="heart ${saved.has(s.title) ? "saved" : ""}" data-save="${s.title}" aria-label="Save ${s.title}">${saved.has(s.title) ? "♥" : "♡"}</button></div><div class="card-footer"><div class="card-copy"><h3>${s.title}</h3><p>${s.artist || s.recording?.artist || s.mood}</p></div><button class="card-play" data-play="${pageStart + i}" aria-label="Play ${s.title}">▶</button></div></article>`,
         )
         .join("")
     : `<div class="empty">${document.querySelector(".filter.active")?.dataset.filter === "Favorites" ? "No favorites yet. Tap the heart on any sound to keep it here." : "No sounds found. Try another mood."}</div>`;
   document.querySelector("#resultCount").textContent =
     `${filtered.length} soundscape${filtered.length === 1 ? "" : "s"}`;
   document.querySelector("#favoriteCount").textContent = saved.size;
-  document
-    .querySelector("#loadMore")
-    .classList.toggle("hidden", visibleCount >= filtered.length);
+  document.querySelector("#pageStatus").textContent = `Page ${currentPage} of ${pageCount}`;
+  document.querySelector("#previousPage").disabled = currentPage === 1;
+  document.querySelector("#nextPage").disabled = currentPage === pageCount;
+  document.querySelector("#libraryPagination").classList.toggle("single-page", pageCount === 1);
 }
 function resetCardWindow() {
-  visibleCount = PAGE_SIZE;
+  currentPage = 1;
 }
-function loadNextCardPage() {
-  if (visibleCount >= filtered.length) return;
-  visibleCount = Math.min(filtered.length, visibleCount + PAGE_SIZE);
+function changePage(direction) {
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const nextPage = Math.min(pageCount, Math.max(1, currentPage + direction));
+  if (nextPage === currentPage) return;
+  currentPage = nextPage;
   render();
+  document.querySelector("#library").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 render();
 updateListenerInsight();
@@ -1360,17 +1366,8 @@ document.querySelector("#searchInput").oninput = (e) => {
   resetCardWindow();
   render();
 };
-const loadMoreButton = document.querySelector("#loadMore");
-loadMoreButton.onclick = loadNextCardPage;
-if ("IntersectionObserver" in window) {
-  const cardLoader = new IntersectionObserver(
-    ([entry]) => {
-      if (entry.isIntersecting) loadNextCardPage();
-    },
-    { rootMargin: "500px 0px" },
-  );
-  cardLoader.observe(loadMoreButton);
-}
+document.querySelector("#previousPage").onclick = () => changePage(-1);
+document.querySelector("#nextPage").onclick = () => changePage(1);
 document.querySelectorAll(".playlist-card").forEach(
   (card) =>
     (card.onclick = () => {

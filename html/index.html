@@ -97,7 +97,11 @@
       </div>
       <div class="library-meta"><span id="resultCount">1,000 soundscapes</span><span id="listenerInsight">Your mix learns as you listen · Private to this device</span></div>
       <div class="sound-grid" id="soundGrid"></div>
-      <button class="load-more" id="loadMore">Explore more sounds <span>↓</span></button>
+      <nav class="library-pagination" id="libraryPagination" aria-label="Music pages">
+        <button id="previousPage" type="button"><span aria-hidden="true">←</span> Previous</button>
+        <span id="pageStatus" aria-live="polite">Page 1 of 1</span>
+        <button id="nextPage" type="button">Next <span aria-hidden="true">→</span></button>
+      </nav>
     </section>
 
     <section class="calm-tools" aria-labelledby="toolsTitle">
@@ -133,7 +137,7 @@
   <footer>
     <a href="#" class="brand dark-brand"><img class="logo-image" src="../assets/drift-logo.svg" alt="Drift" /></a>
     <p>Sound for slower moments.</p>
-    <div><a href="#explore">Explore</a><a href="#library">Library</a><a href="#about">Our intention</a></div>
+    <div><a href="#explore">Explore</a><a href="#library">Library</a><a href="#about">Our intention</a><a class="creator-link" href="https://github.com/404BroNotFound" target="_blank" rel="noopener noreferrer">Meet the creator <span aria-hidden="true">↗</span></a></div>
     <small>© 2026 Drift. Built for calm, not clinical treatment.</small>
   </footer>
 

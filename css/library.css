@@ -354,6 +354,61 @@
   }
 }
 
+.library-pagination {
+  display: grid;
+  grid-template-columns: 140px minmax(120px, auto) 140px;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2.5rem;
+}
+
+.library-pagination button {
+  min-height: 46px;
+  padding: 0 1rem;
+  border: 1px solid rgba(23, 56, 62, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.48);
+  color: #17383e;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.library-pagination button:not(:disabled):hover {
+  background: #17383e;
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+.library-pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.library-pagination > span {
+  color: #617477;
+  font-size: 0.82rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+.library-pagination.single-page {
+  display: none;
+}
+
+@media (max-width: 520px) {
+  .library-pagination {
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0.55rem;
+  }
+
+  .library-pagination button {
+    padding: 0 0.7rem;
+    font-size: 0.78rem;
+  }
+}
+
 /* Playback feedback lives here so the library and player share one state language. */
 .player.loading .play-main {
   animation: drift-loading 900ms ease-in-out infinite alternate;
