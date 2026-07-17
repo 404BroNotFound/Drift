@@ -804,7 +804,7 @@ function render() {
     ? shown
         .map(
           (s, i) =>
-            `<article class="card" style="--bg:${s.bg}"><div class="card-top"><span class="tag">${s.cat.toUpperCase()}</span><button class="heart ${saved.has(s.title) ? "saved" : ""}" data-save="${s.title}" aria-label="Save ${s.title}">${saved.has(s.title) ? "♥" : "♡"}</button></div><h3>${s.title}</h3><p>${s.mood}</p><button class="card-play" data-play="${i}" aria-label="Play ${s.title}">▶</button></article>`,
+            `<article class="card" style="--bg:${s.bg}"><div class="card-top"><span class="tag">${(s.genre || s.cat).toUpperCase()}</span><button class="heart ${saved.has(s.title) ? "saved" : ""}" data-save="${s.title}" aria-label="Save ${s.title}">${saved.has(s.title) ? "♥" : "♡"}</button></div><div class="card-copy"><h3>${s.title}</h3><p>${s.artist || s.recording?.artist || s.mood}</p></div><button class="card-play" data-play="${i}" aria-label="Play ${s.title}">▶</button></article>`,
         )
         .join("")
     : `<div class="empty">${document.querySelector(".filter.active")?.dataset.filter === "Favorites" ? "No favorites yet. Tap the heart on any sound to keep it here." : "No sounds found. Try another mood."}</div>`;
@@ -829,26 +829,40 @@ async function loadExpandedCatalog() {
     const response = await fetch("../assets/data/tracks.json");
     if (!response.ok) throw new Error("Catalog unavailable");
     const catalog = await response.json();
-    const colors = [
-      ["#8aa9a2", "#315c62", "#112f39"],
-      ["#b39a83", "#685b56", "#29383e"],
-      ["#9a91ac", "#555472", "#222b47"],
-      ["#b9b58e", "#66795e", "#2d4b49"],
-      ["#a6b6bd", "#526c78", "#203541"],
-      ["#c8a47c", "#805e55", "#35414a"],
-    ];
+    const palettes = {
+      Ambient: ["#91aca8", "#456d70", "#163c45"],
+      Piano: ["#b9b4ae", "#696b72", "#292f3a"],
+      Meditation: ["#c8b58d", "#81745f", "#384a4b"],
+      Jazz: ["#bc8e78", "#744f55", "#2b3240"],
+      Acoustic: ["#c1a67d", "#7b684f", "#334846"],
+      World: ["#a9b487", "#65795d", "#294845"],
+    };
     const icons = ["○", "≈", "✦", "☾", "∿", "◇", "◌", "♪"];
+    const genreGroup = (rawGenre) => {
+      const genre = String(rawGenre).toLowerCase();
+      if (genre.includes("jazz")) return "Jazz";
+      if (genre.includes("classical") || genre.includes("piano")) return "Piano";
+      if (genre.includes("meditation") || genre.includes("spiritual")) return "Meditation";
+      if (genre.includes("acoustic") || genre.includes("guitar")) return "Acoustic";
+      if (genre.includes("world") || genre.includes("folk") || genre.includes("china")) return "World";
+      return "Ambient";
+    };
     const expanded = catalog.map((track, index) => {
-      const palette = colors[index % colors.length];
-      const category = track.genre === "Meditation"
+      const genre = genreGroup(track.genre);
+      const palette = palettes[genre];
+      const category = genre === "Meditation"
         ? "Meditate"
-        : track.genre === "Ambient"
+        : genre === "Ambient"
           ? "Sleep"
-          : "Focus";
+          : genre === "World"
+            ? "Nature"
+            : "Focus";
       return {
         title: track.title,
         cat: category,
-        mood: `${track.genre} · ${track.mood}`,
+        genre,
+        artist: track.artist,
+        mood: `${genre} · ${track.mood}`,
         icon: icons[index % icons.length],
         bg: `radial-gradient(circle at ${30 + (index % 45)}% ${20 + (index % 35)}%,${palette[0]},${palette[1]} 45%,${palette[2]})`,
         seed: index,
@@ -1145,6 +1159,7 @@ async function startSound(s, sourceButton = null) {
     ? sourceButton
     : null;
   updatePlayer(s);
+  player.classList.add("loading");
   document.querySelector("#nowCategory").textContent = "Loading recording…";
   try {
     const url = await resolveRecordingUrl(recording);
@@ -1157,11 +1172,12 @@ async function startSound(s, sourceButton = null) {
   } catch (error) {
     if (request !== playbackRequest) return;
     playing = false;
-    player.classList.remove("playing");
+    player.classList.remove("playing", "loading");
     syncPlayButtons();
     document.querySelector("#nowCategory").textContent = "This recording is temporarily unavailable";
     return;
   }
+  player.classList.remove("loading");
   playing = true;
   seconds = 0;
   clearInterval(tick);
@@ -1189,7 +1205,7 @@ function updatePlayer(s) {
   player.classList.add("visible", "playing");
   document.querySelector("#nowTitle").textContent = s.title;
   document.querySelector("#nowCategory").textContent =
-    `${s.recording.title} · ${s.recording.artist}`;
+    `${s.genre || s.recording?.genre || s.cat} · ${s.artist || s.recording?.artist || "Drift collection"}`;
   document.querySelector("#nowArt").textContent = s.icon;
   syncPlayButtons();
 }
@@ -1197,9 +1213,11 @@ function syncPlayButtons() {
   playBtn.textContent = playing ? "⏸" : "▶";
   playBtn.setAttribute("aria-label", playing ? "Pause" : "Play");
   document.querySelectorAll(".card-play").forEach((button) => {
-    const isActive = button === activePlayButton && playing;
+    const sound = filtered[+button.dataset.play];
+    const isActive = Boolean(sound) && sounds.indexOf(sound) === current && playing;
     button.textContent = isActive ? "⏸" : "▶";
     button.setAttribute("aria-label", isActive ? "Pause sound" : "Play sound");
+    button.closest(".card")?.classList.toggle("is-active", isActive);
   });
 }
 function toggle() {
@@ -1226,7 +1244,7 @@ grid.addEventListener("click", (e) => {
   const p = e.target.closest("[data-play]");
   if (p) {
     const selectedSound = filtered[+p.dataset.play];
-    if (p === activePlayButton && current === sounds.indexOf(selectedSound)) {
+    if (recordedAudio.src && current === sounds.indexOf(selectedSound)) {
       toggle();
     } else {
       startSound(selectedSound, p);
@@ -1264,7 +1282,7 @@ document.querySelectorAll(".filter").forEach(
           ? [...sounds]
           : b.dataset.filter === "Favorites"
             ? sounds.filter((sound) => saved.has(sound.title))
-            : sounds.filter((s) => s.cat === b.dataset.filter);
+            : sounds.filter((sound) => sound.genre === b.dataset.filter);
       resetCardWindow();
       render();
     }),
@@ -1272,7 +1290,7 @@ document.querySelectorAll(".filter").forEach(
 document.querySelector("#searchInput").oninput = (e) => {
   const q = e.target.value.toLowerCase();
   filtered = sounds.filter((s) =>
-    (s.title + s.cat + s.mood).toLowerCase().includes(q),
+    (s.title + s.cat + s.genre + s.artist + s.mood).toLowerCase().includes(q),
   );
   resetCardWindow();
   render();

@@ -3,9 +3,27 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 const TARGET = 1000;
 const PAGE_SIZE = 100;
 const INCLUDE = /ambient|relax|meditat|calm|peace|soft|dream|sleep|piano|acoustic|guitar|jazz|folk|world|nature|spiritual|beautiful/i;
-const EXCLUDE = /aggressive|energetic|epic|horror|scary|hard rock|metal|punk|trailer|tension|suspense|corporate|upbeat|sport/i;
+const EXCLUDE = /aggressive|energetic|epic|horror|scary|hard rock|metal|punk|trailer|tension|suspense|corporate|upbeat|sport|\brap\b|hip[ -]?hop|boom bap|\bbeats?\b|trap|\bhouse\b|edm|dubstep|dance|club|funk|christmas|xmas|holiday|children|kids|motivational|advertising/i;
 const tracks = [];
 const seen = new Set();
+
+const NAME_PREFIXES = [
+  "Quiet", "Moonlit", "Gentle", "Still", "Soft", "Distant", "Silver", "Hidden",
+  "Tender", "Peaceful", "Velvet", "Morning", "Evening", "Calm", "Floating", "Warm",
+  "Silent", "Dreaming", "Amber", "Autumn", "Winter", "Open", "Restful", "Slow", "Inner",
+];
+const NAME_SUFFIXES = [
+  "Horizon", "Garden", "Tides", "Meadow", "Reflections", "Lanterns", "Shore", "Clouds",
+  "River", "Sanctuary", "Dawn", "Twilight", "Rain", "Breeze", "Valley", "Path",
+  "Harbor", "Dreams", "Echoes", "Light", "Forest", "Stillness", "Waves", "Bloom",
+  "Sky", "Solitude", "Journey", "Whispers", "Haven", "Moments", "Drift", "Serenity",
+  "Waters", "Glow", "Mist", "Lullaby", "Canvas", "Embers", "Space", "Reverie",
+];
+
+function professionalName(index) {
+  const shuffled = (index * 37) % (NAME_PREFIXES.length * NAME_SUFFIXES.length);
+  return `${NAME_PREFIXES[shuffled % NAME_PREFIXES.length]} ${NAME_SUFFIXES[Math.floor(shuffled / NAME_PREFIXES.length)]}`;
+}
 
 function cleanTitle(rawTitle, artist, genre) {
   let title = String(rawTitle || "Untitled")
@@ -69,8 +87,22 @@ async function cleanExistingCatalog() {
   console.log(`Cleaned ${existing.length} catalog titles.`);
 }
 
+async function renameExistingCatalog() {
+  const outputUrl = new URL("../assets/data/tracks.json", import.meta.url);
+  const existing = JSON.parse(await readFile(outputUrl, "utf8"));
+  existing.forEach((track, index) => {
+    track.title = professionalName(index);
+  });
+  await writeFile(outputUrl, `${JSON.stringify(existing, null, 2)}\n`, "utf8");
+  console.log(`Renamed ${existing.length} catalog tracks.`);
+}
+
 if (process.argv.includes("--clean-existing")) {
   await cleanExistingCatalog();
+  process.exit(0);
+}
+if (process.argv.includes("--rename-existing")) {
+  await renameExistingCatalog();
   process.exit(0);
 }
 
@@ -105,7 +137,8 @@ for (let offset = 0; tracks.length < TARGET && offset < 20000; offset += PAGE_SI
       tags = JSON.parse(row.Tags || "[]");
     } catch {}
     tracks.push({
-      title: cleanTitle(row.Titulo, row.Autor, row.Genero),
+      title: professionalName(tracks.length),
+      originalTitle: cleanTitle(row.Titulo, row.Autor, row.Genero),
       artist: cleanArtist(row.Autor),
       genre: String(row.Genero || "Ambient").trim(),
       mood: tags.slice(0, 3).join(" · ") || "Calm instrumental",

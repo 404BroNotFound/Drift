@@ -2313,16 +2313,20 @@ html {
   }
 }
 /* Prevent cover content and controls from overlapping */
-.card h3,
 .card p {
   width: calc(100% - 62px);
   max-width: calc(100% - 62px);
   overflow-wrap: anywhere;
 }
 .card h3 {
+  width: 100%;
+  max-width: 100%;
   font-size: clamp(20px, 1.7vw, 25px);
   line-height: 1.08;
   margin-bottom: 9px;
+  overflow-wrap: normal;
+  word-break: normal;
+  text-wrap: balance;
 }
 .card p {
   line-height: 1.45;
@@ -2344,7 +2348,6 @@ html {
   white-space: nowrap;
 }
 @media (max-width: 600px) {
-  .card h3,
   .card p {
     width: calc(100% - 58px);
     max-width: calc(100% - 58px);
@@ -2361,7 +2364,6 @@ html {
   .card h3 {
     font-size: 21px;
   }
-  .card h3,
   .card p {
     width: calc(100% - 52px);
     max-width: calc(100% - 52px);
