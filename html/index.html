@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="../css/library.css?v=1" />
 </head>
 <body>
+  <a class="skip-link" href="#mainContent">Skip to content</a>
   <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
   <div class="headphone-intro" id="headphoneIntro" role="dialog" aria-modal="true" aria-labelledby="introTitle">
     <div class="intro-grain"></div>
@@ -34,7 +35,7 @@
     </div>
   </header>
 
-  <main>
+  <main id="mainContent" tabindex="-1">
     <section class="hero" id="explore">
       <div class="hero-shade"></div>
       <div class="hero-content">
@@ -84,6 +85,7 @@
         <div class="search-box"><span>⌕</span><input id="searchInput" type="search" placeholder="Search sounds, moods..." aria-label="Search sounds" /></div>
       </div>
       <div class="filters" role="group" aria-label="Filter sounds">
+        <button class="filter personalized-filter" data-filter="ForYou"><span aria-hidden="true">✦</span> For you</button>
         <button class="filter active" data-filter="All">All sounds</button>
         <button class="filter" data-filter="Ambient">Ambient</button>
         <button class="filter" data-filter="Piano">Piano</button>
@@ -93,7 +95,7 @@
         <button class="filter" data-filter="World">World</button>
         <button class="filter favorites-filter" data-filter="Favorites">♥ Favorites <span id="favoriteCount">0</span></button>
       </div>
-      <div class="library-meta"><span id="resultCount">1,000 soundscapes</span><span>Recorded music · No interruptions</span></div>
+      <div class="library-meta"><span id="resultCount">1,000 soundscapes</span><span id="listenerInsight">Your mix learns as you listen · Private to this device</span></div>
       <div class="sound-grid" id="soundGrid"></div>
       <button class="load-more" id="loadMore">Explore more sounds <span>↓</span></button>
     </section>
@@ -146,7 +148,7 @@
     <button class="player-icon" id="volumeBtn" aria-label="Mute">◕</button>
     <input class="volume" id="volume" type="range" min="0" max="1" step="0.01" value="0.82" aria-label="Volume" />
   </div>
-  <div class="toast" id="toast">Added to your library</div>
+  <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true">Added to your library</div>
   <button class="back-top" id="backTop" aria-label="Back to top">↑</button>
   <script src="../js/app.js?v=7"></script>
 </body>

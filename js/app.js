@@ -794,6 +794,65 @@ let activePlayButton = null;
 const saved = new Set(
   JSON.parse(localStorage.getItem("drift-favorites") || "[]"),
 );
+const emptyListenerProfile = { plays: 0, genres: {}, categories: {}, recent: [] };
+let listenerProfile;
+try {
+  listenerProfile = {
+    ...emptyListenerProfile,
+    ...JSON.parse(localStorage.getItem("drift-listener-profile") || "{}"),
+  };
+  listenerProfile.genres ||= {};
+  listenerProfile.categories ||= {};
+  listenerProfile.recent = Array.isArray(listenerProfile.recent)
+    ? listenerProfile.recent
+    : [];
+} catch {
+  listenerProfile = { ...emptyListenerProfile };
+}
+
+function preferenceScore(sound) {
+  const genreAffinity = listenerProfile.genres[sound.genre] || 0;
+  const categoryAffinity = listenerProfile.categories[sound.cat] || 0;
+  const recentPosition = listenerProfile.recent.indexOf(sound.title);
+  const freshness = recentPosition === -1 ? 2 : -Math.max(0, 5 - recentPosition);
+  return genreAffinity * 7 + categoryAffinity * 3 + freshness;
+}
+
+function personalizedSounds() {
+  if (!listenerProfile.plays) return [...sounds];
+  return [...sounds].sort((a, b) => {
+    const scoreDifference = preferenceScore(b) - preferenceScore(a);
+    return scoreDifference || a.title.localeCompare(b.title);
+  });
+}
+
+function updateListenerInsight() {
+  const insight = document.querySelector("#listenerInsight");
+  const forYouButton = document.querySelector('[data-filter="ForYou"]');
+  if (!listenerProfile.plays) {
+    insight.textContent = "Your mix learns as you listen · Private to this device";
+    forYouButton.classList.remove("is-ready");
+    return;
+  }
+  const topGenre = Object.entries(listenerProfile.genres)
+    .sort((a, b) => b[1] - a[1])[0]?.[0];
+  insight.textContent = topGenre
+    ? `Tuned toward ${topGenre.toLowerCase()} · Based on ${listenerProfile.plays} ${listenerProfile.plays === 1 ? "listen" : "listens"}`
+    : `Personalized from ${listenerProfile.plays} ${listenerProfile.plays === 1 ? "listen" : "listens"}`;
+  forYouButton.classList.add("is-ready");
+}
+
+function learnFromPlay(sound) {
+  listenerProfile.plays += 1;
+  listenerProfile.genres[sound.genre] = (listenerProfile.genres[sound.genre] || 0) + 1;
+  listenerProfile.categories[sound.cat] = (listenerProfile.categories[sound.cat] || 0) + 1;
+  listenerProfile.recent = [
+    sound.title,
+    ...listenerProfile.recent.filter((title) => title !== sound.title),
+  ].slice(0, 12);
+  localStorage.setItem("drift-listener-profile", JSON.stringify(listenerProfile));
+  updateListenerInsight();
+}
 const grid = document.querySelector("#soundGrid"),
   player = document.querySelector("#player"),
   playBtn = document.querySelector("#playBtn");
@@ -804,7 +863,7 @@ function render() {
     ? shown
         .map(
           (s, i) =>
-            `<article class="card" style="--bg:${s.bg}"><div class="card-top"><span class="tag">${(s.genre || s.cat).toUpperCase()}</span><button class="heart ${saved.has(s.title) ? "saved" : ""}" data-save="${s.title}" aria-label="Save ${s.title}">${saved.has(s.title) ? "♥" : "♡"}</button></div><div class="card-copy"><h3>${s.title}</h3><p>${s.artist || s.recording?.artist || s.mood}</p></div><button class="card-play" data-play="${i}" aria-label="Play ${s.title}">▶</button></article>`,
+            `<article class="card" style="--bg:${s.bg}"><div class="card-top"><span class="tag">${(s.genre || s.cat).toUpperCase()}</span><button class="heart ${saved.has(s.title) ? "saved" : ""}" data-save="${s.title}" aria-label="Save ${s.title}">${saved.has(s.title) ? "♥" : "♡"}</button></div><div class="card-footer"><div class="card-copy"><h3>${s.title}</h3><p>${s.artist || s.recording?.artist || s.mood}</p></div><button class="card-play" data-play="${i}" aria-label="Play ${s.title}">▶</button></div></article>`,
         )
         .join("")
     : `<div class="empty">${document.querySelector(".filter.active")?.dataset.filter === "Favorites" ? "No favorites yet. Tap the heart on any sound to keep it here." : "No sounds found. Try another mood."}</div>`;
@@ -824,6 +883,7 @@ function loadNextCardPage() {
   render();
 }
 render();
+updateListenerInsight();
 async function loadExpandedCatalog() {
   try {
     const response = await fetch("../assets/data/tracks.json");
@@ -870,7 +930,9 @@ async function loadExpandedCatalog() {
       };
     });
     sounds.splice(0, sounds.length, ...expanded);
-    filtered = [...sounds];
+    filtered = document.querySelector(".filter.active")?.dataset.filter === "ForYou"
+      ? personalizedSounds()
+      : [...sounds];
     resetCardWindow();
     render();
   } catch (error) {
@@ -1179,6 +1241,7 @@ async function startSound(s, sourceButton = null) {
   }
   player.classList.remove("loading");
   playing = true;
+  learnFromPlay(s);
   seconds = 0;
   clearInterval(tick);
   tick = setInterval(() => {
@@ -1278,7 +1341,9 @@ document.querySelectorAll(".filter").forEach(
         .forEach((x) => x.classList.remove("active"));
       b.classList.add("active");
       filtered =
-        b.dataset.filter === "All"
+        b.dataset.filter === "ForYou"
+          ? personalizedSounds()
+          : b.dataset.filter === "All"
           ? [...sounds]
           : b.dataset.filter === "Favorites"
             ? sounds.filter((sound) => saved.has(sound.title))
@@ -1492,17 +1557,20 @@ document.querySelector("#releaseNoteButton").onclick = () => {
 // Opening headphone recommendation
 const headphoneIntro = document.querySelector("#headphoneIntro"),
   enterDrift = document.querySelector("#enterDrift");
-document.body.style.overflow = "hidden";
+const hasSeenIntro = sessionStorage.getItem("drift-intro-seen") === "true";
+if (hasSeenIntro) headphoneIntro.remove();
+else document.body.style.overflow = "hidden";
 let introClosed = false;
 function closeIntro() {
-  if (introClosed) return;
+  if (introClosed || !headphoneIntro?.isConnected) return;
   introClosed = true;
+  sessionStorage.setItem("drift-intro-seen", "true");
   headphoneIntro.classList.add("leaving");
   document.body.style.overflow = "";
   setTimeout(() => headphoneIntro.remove(), 850);
 }
-const introTimer = setTimeout(closeIntro, 3400);
-enterDrift.focus();
+const introTimer = hasSeenIntro ? null : setTimeout(closeIntro, 3400);
+if (!hasSeenIntro) enterDrift.focus();
 enterDrift.onclick = () => {
   clearTimeout(introTimer);
   closeIntro();
