@@ -635,10 +635,144 @@ const relaxingTracks = [
     artist: "Konstantin Pazuzu Studio",
     url: "https://archive.org/download/jamendo-638462/01-2326430-KonstantinPazuzuStudio-Deep%20Blue%20Ocean.mp3",
   },
+  {
+    title: "Mahjong Melodies",
+    artist: "Ivan Chew",
+    url: "https://archive.org/download/MahjongMelodies/MahjongMelodies.mp3",
+  },
+  {
+    title: "Autumn Wind Song",
+    artist: "Traditional Chinese",
+    url: "https://archive.org/download/QiuFengCi/QiuFengCi.mp3",
+  },
+  {
+    title: "Guzheng Meditation",
+    artist: "Demonic Sweaters",
+    url: "https://archive.org/download/jamendo-564979/01-2167061-Demonic%20Sweaters-Chinese%20Spiritual%20Asian%20Meditation%20Guzheng%20and%20War%20Drum.mp3",
+  },
+  {
+    title: "Koto Cherry Blossom",
+    artist: "BMNC",
+    url: "https://archive.org/download/japanese-lofi-koto-cherry-blossom/Japanese%20Lofi%20Koto%20-%20Cherry%20Blossom.mp3",
+  },
+  {
+    title: "Sitar Meditation",
+    artist: "E.M.M",
+    url: "https://archive.org/download/jamendo-564013/01-2165112-E.M.M-Ethnic%20Sitar%20Meditation%20without%20Percussion.mp3",
+  },
+  {
+    title: "Nostalgia",
+    artist: "William King",
+    url: "https://archive.org/download/jamendo-515968/01-2019320-Acoustic%20Guitar%20by%20William%20King-Nostalgia%20_Relaxing%20Guitar_.mp3",
+  },
+  {
+    title: "Evening Smooth Jazz",
+    artist: "Nick Gordy",
+    url: "https://archive.org/download/jamendo-423269/01-1557331-Nick%20Gordy-Evening%20Smooth%20Jazz.mp3",
+  },
+  {
+    title: "Celtic Ambient Harp",
+    artist: "Raw Vibrations",
+    url: "https://archive.org/download/jamendo-484650/01-1948926-Raw%20Vibrations-Celtic%20Ambient%20Harp.mp3",
+  },
+  {
+    title: "Arabic Oud",
+    artist: "TimTaj",
+    url: "https://archive.org/download/jamendo-499954/01-1980376-TimTaj-Arabic%20Oud.mp3",
+  },
+  {
+    title: "Spanish Romantic Guitar",
+    artist: "Nerevarin",
+    url: "https://archive.org/download/jamendo-321154/01-1477364-Nerevarin-Spanish%20Romantic%20guitar.mp3",
+  },
+  {
+    title: "Beneath the Evening Sky",
+    artist: "Bobby Cole",
+    url: "https://archive.org/download/jamendo-634038/01-2319712-Bobby%20Cole-Beneath%20the%20Evening%20Sky%20_Beautiful%20Classical%20Solo%20Piano%20Music_.mp3",
+  },
 ];
 sounds.forEach((sound, index) => {
   sound.recording = relaxingTracks[(sound.seed ?? index) % relaxingTracks.length];
 });
+[
+  {
+    index: 5,
+    title: "Chinese Silk Garden",
+    mood: "Chinese instrumental · Gentle strings",
+    icon: "◇",
+    recording: relaxingTracks[6],
+  },
+  {
+    index: 20,
+    title: "Autumn Wind Song",
+    mood: "Traditional Chinese · Quiet reflection",
+    icon: "☾",
+    recording: relaxingTracks[7],
+  },
+  {
+    index: 27,
+    title: "Guzheng Meditation",
+    mood: "Guzheng · Restful meditation",
+    icon: "♪",
+    recording: relaxingTracks[8],
+  },
+  {
+    index: 8,
+    title: "Koto Cherry Blossom",
+    mood: "Japanese koto · Gentle lo-fi",
+    icon: "❀",
+    recording: relaxingTracks[9],
+  },
+  {
+    index: 14,
+    title: "Still Sitar",
+    mood: "Indian sitar · Meditation without percussion",
+    icon: "◌",
+    recording: relaxingTracks[10],
+  },
+  {
+    index: 23,
+    title: "Acoustic Nostalgia",
+    mood: "Acoustic guitar · Warm and unhurried",
+    icon: "♭",
+    recording: relaxingTracks[11],
+  },
+  {
+    index: 34,
+    title: "Evening Smooth Jazz",
+    mood: "Soft jazz · Quiet evening",
+    icon: "♫",
+    recording: relaxingTracks[12],
+  },
+  {
+    index: 10,
+    title: "Celtic Harp Haven",
+    mood: "Celtic harp · Floating ambience",
+    icon: "♧",
+    recording: relaxingTracks[13],
+  },
+  {
+    index: 17,
+    title: "Quiet Oud",
+    mood: "Arabic oud · Warm evening",
+    icon: "☽",
+    recording: relaxingTracks[14],
+  },
+  {
+    index: 26,
+    title: "Spanish Moonlight",
+    mood: "Spanish guitar · Romantic and soft",
+    icon: "♩",
+    recording: relaxingTracks[15],
+  },
+  {
+    index: 31,
+    title: "Beneath the Evening Sky",
+    mood: "Classical piano · Slow and peaceful",
+    icon: "♬",
+    recording: relaxingTracks[16],
+  },
+].forEach(({ index, ...details }) => Object.assign(sounds[index], details));
 let filtered = [...sounds],
   current = 0,
   playing = false,
@@ -649,7 +783,10 @@ let filtered = [...sounds],
   seconds = 0,
   tick,
   muted = false,
+  windowStart = 0,
   visibleCount = 12;
+const PAGE_SIZE = 12;
+const MAX_RENDERED_CARDS = 36;
 const recordedAudio = new Audio();
 recordedAudio.loop = true;
 recordedAudio.preload = "metadata";
@@ -662,12 +799,14 @@ const grid = document.querySelector("#soundGrid"),
   player = document.querySelector("#player"),
   playBtn = document.querySelector("#playBtn");
 function render() {
-  const shown = filtered.slice(0, visibleCount);
+  visibleCount = Math.min(visibleCount, filtered.length);
+  windowStart = Math.min(windowStart, Math.max(0, visibleCount - PAGE_SIZE));
+  const shown = filtered.slice(windowStart, visibleCount);
   grid.innerHTML = shown.length
     ? shown
         .map(
           (s, i) =>
-            `<article class="card" style="--bg:${s.bg}"><div class="card-top"><span class="tag">${s.cat.toUpperCase()}</span><button class="heart ${saved.has(s.title) ? "saved" : ""}" data-save="${s.title}" aria-label="Save ${s.title}">${saved.has(s.title) ? "♥" : "♡"}</button></div><h3>${s.title}</h3><p>${s.mood}</p><button class="card-play" data-play="${i}" aria-label="Play ${s.title}">▶</button></article>`,
+            `<article class="card" style="--bg:${s.bg}"><div class="card-top"><span class="tag">${s.cat.toUpperCase()}</span><button class="heart ${saved.has(s.title) ? "saved" : ""}" data-save="${s.title}" aria-label="Save ${s.title}">${saved.has(s.title) ? "♥" : "♡"}</button></div><h3>${s.title}</h3><p>${s.mood}</p><button class="card-play" data-play="${windowStart + i}" aria-label="Play ${s.title}">▶</button></article>`,
         )
         .join("")
     : `<div class="empty">${document.querySelector(".filter.active")?.dataset.filter === "Favorites" ? "No favorites yet. Tap the heart on any sound to keep it here." : "No sounds found. Try another mood."}</div>`;
@@ -677,6 +816,40 @@ function render() {
   document
     .querySelector("#loadMore")
     .classList.toggle("hidden", visibleCount >= filtered.length);
+}
+function resetCardWindow() {
+  windowStart = 0;
+  visibleCount = PAGE_SIZE;
+}
+function loadNextCardPage() {
+  if (visibleCount >= filtered.length) return;
+  visibleCount = Math.min(filtered.length, visibleCount + PAGE_SIZE);
+  if (visibleCount - windowStart > MAX_RENDERED_CARDS) {
+    const nextStart = windowStart + PAGE_SIZE;
+    const anchor = grid.querySelector(`[data-play="${nextStart}"]`)?.closest(".card");
+    const before = anchor?.getBoundingClientRect().top;
+    windowStart = nextStart;
+    render();
+    const restored = grid.querySelector(`[data-play="${nextStart}"]`)?.closest(".card");
+    if (before != null && restored) {
+      window.scrollBy(0, restored.getBoundingClientRect().top - before);
+    }
+    return;
+  }
+  render();
+}
+function loadPreviousCardPage() {
+  if (windowStart <= 0) return;
+  const anchorIndex = windowStart;
+  const anchor = grid.querySelector(`[data-play="${anchorIndex}"]`)?.closest(".card");
+  const before = anchor?.getBoundingClientRect().top;
+  windowStart = Math.max(0, windowStart - PAGE_SIZE);
+  visibleCount = Math.min(filtered.length, windowStart + MAX_RENDERED_CARDS);
+  render();
+  const restored = grid.querySelector(`[data-play="${anchorIndex}"]`)?.closest(".card");
+  if (before != null && restored) {
+    window.scrollBy(0, restored.getBoundingClientRect().top - before);
+  }
 }
 render();
 function noise(color = "white") {
@@ -1057,7 +1230,7 @@ document.querySelectorAll(".filter").forEach(
           : b.dataset.filter === "Favorites"
             ? sounds.filter((sound) => saved.has(sound.title))
             : sounds.filter((s) => s.cat === b.dataset.filter);
-      visibleCount = 12;
+      resetCardWindow();
       render();
     }),
 );
@@ -1066,13 +1239,39 @@ document.querySelector("#searchInput").oninput = (e) => {
   filtered = sounds.filter((s) =>
     (s.title + s.cat + s.mood).toLowerCase().includes(q),
   );
-  visibleCount = 12;
+  resetCardWindow();
   render();
 };
-document.querySelector("#loadMore").onclick = () => {
-  visibleCount += 12;
-  render();
-};
+const loadMoreButton = document.querySelector("#loadMore");
+loadMoreButton.onclick = loadNextCardPage;
+if ("IntersectionObserver" in window) {
+  const cardLoader = new IntersectionObserver(
+    ([entry]) => {
+      if (entry.isIntersecting) loadNextCardPage();
+    },
+    { rootMargin: "500px 0px" },
+  );
+  cardLoader.observe(loadMoreButton);
+}
+let previousLibraryScrollY = window.scrollY;
+let restoringPreviousCards = false;
+window.addEventListener(
+  "scroll",
+  () => {
+    const movingUp = window.scrollY < previousLibraryScrollY;
+    previousLibraryScrollY = window.scrollY;
+    if (!movingUp || windowStart <= 0 || restoringPreviousCards) return;
+    const firstCard = grid.querySelector(".card");
+    if (!firstCard || firstCard.getBoundingClientRect().top < -120) return;
+    restoringPreviousCards = true;
+    loadPreviousCardPage();
+    requestAnimationFrame(() => {
+      previousLibraryScrollY = window.scrollY;
+      restoringPreviousCards = false;
+    });
+  },
+  { passive: true },
+);
 document.querySelectorAll(".playlist-card").forEach(
   (card) =>
     (card.onclick = () => {
@@ -1205,6 +1404,8 @@ breathButton.onclick = () => {
 };
 
 const rippleStage = document.querySelector(".ripple-stage");
+const pondDropSound = new Audio("../assets/audio/pond-water-drop.mp3");
+pondDropSound.preload = "auto";
 function makeRipple(x, y) {
   const ripple = document.createElement("i");
   ripple.className = "ripple";
@@ -1215,58 +1416,9 @@ function makeRipple(x, y) {
 }
 function playWaterRipple(size = 0.5) {
   if (!effectsOn) return;
-  fxCtx ||= new (window.AudioContext || window.webkitAudioContext)();
-  fxCtx.resume();
-  const now = fxCtx.currentTime;
-
-  // A tiny filtered splash gives the drop a real, wet attack.
-  const splashLength = Math.floor(fxCtx.sampleRate * 0.16);
-  const splashBuffer = fxCtx.createBuffer(1, splashLength, fxCtx.sampleRate);
-  const splashData = splashBuffer.getChannelData(0);
-  for (let i = 0; i < splashLength; i++) {
-    const envelope = Math.exp((-i / splashLength) * 10);
-    splashData[i] = (Math.random() * 2 - 1) * envelope;
-  }
-  const splash = fxCtx.createBufferSource();
-  const splashFilter = fxCtx.createBiquadFilter();
-  const splashGain = fxCtx.createGain();
-  splash.buffer = splashBuffer;
-  splashFilter.type = "bandpass";
-  splashFilter.frequency.value = 1250 + size * 650;
-  splashFilter.Q.value = 0.65;
-  splashGain.gain.setValueAtTime(0.035, now);
-  splashGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
-  splash.connect(splashFilter).connect(splashGain).connect(fxCtx.destination);
-  splash.start(now);
-
-  // A fast downward resonance creates the rounded "plop" of a water ripple.
-  const body = fxCtx.createOscillator();
-  const bodyGain = fxCtx.createGain();
-  body.type = "sine";
-  body.frequency.setValueAtTime(620 - size * 150, now);
-  body.frequency.exponentialRampToValueAtTime(165 - size * 35, now + 0.22);
-  bodyGain.gain.setValueAtTime(0.0001, now);
-  bodyGain.gain.exponentialRampToValueAtTime(0.065, now + 0.008);
-  bodyGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.34);
-  body.connect(bodyGain).connect(fxCtx.destination);
-  body.start(now);
-  body.stop(now + 0.36);
-
-  // Quiet follow-up droplets keep repeated taps organic instead of beep-like.
-  [0.085, 0.145].forEach((delay, index) => {
-    const drop = fxCtx.createOscillator();
-    const dropGain = fxCtx.createGain();
-    const start = now + delay;
-    drop.type = "sine";
-    drop.frequency.setValueAtTime(760 + index * 90, start);
-    drop.frequency.exponentialRampToValueAtTime(310, start + 0.08);
-    dropGain.gain.setValueAtTime(0.0001, start);
-    dropGain.gain.exponentialRampToValueAtTime(0.012, start + 0.005);
-    dropGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.1);
-    drop.connect(dropGain).connect(fxCtx.destination);
-    drop.start(start);
-    drop.stop(start + 0.11);
-  });
+  const drop = pondDropSound.cloneNode();
+  drop.volume = 0.24 + size * 0.08;
+  drop.play().catch(() => {});
 }
 rippleStage.onclick = (e) => {
   const box = rippleStage.getBoundingClientRect(),

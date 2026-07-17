@@ -1,11 +1,183 @@
-const scenes={ocean:{title:'Moonlit Tides',heading:'Moonlit<br><em>tides.</em>',label:'01 · NIGHT OCEAN',desc:'Slow waves beneath an open night sky.',type:'ocean'},rain:{title:'Rainy Window',heading:'Rainy<br><em>window.</em>',label:'02 · SHELTERED RAIN',desc:'A warm room while the weather moves outside.',type:'rain'},forest:{title:'Forest Dawn',heading:'Forest<br><em>dawn.</em>',label:'03 · MORNING FOREST',desc:'First light moving through a quiet canopy.',type:'forest'},aurora:{title:'Aurora Night',heading:'Aurora<br><em>night.</em>',label:'04 · NORTHERN SKY',desc:'Color and stillness above distant mountains.',type:'drone'},embers:{title:'Quiet Embers',heading:'Quiet<br><em>embers.</em>',label:'05 · FIRESIDE',desc:'A small fire holding back the night.',type:'fire'},clouds:{title:'Above Clouds',heading:'Above<br><em>clouds.</em>',label:'06 · OPEN AIR',desc:'A slow horizon with nowhere else to be.',type:'wind'}};
-let current='ocean',ctx,source,master,playing=false,elapsed=0,timer;
-document.querySelector('#visualWave').innerHTML=Array.from({length:70},()=>`<i style="--h:${5+Math.random()*20}px;--d:-${Math.random()}s"></i>`).join('');
-function createNoise(type){ctx||=new(window.AudioContext||window.webkitAudioContext)();const length=ctx.sampleRate*3,buffer=ctx.createBuffer(1,length,ctx.sampleRate),data=buffer.getChannelData(0);let last=0;for(let i=0;i<length;i++){const white=Math.random()*2-1;last=(last+.02*white)/1.02;data[i]=type==='brown'?last*3.5:white}const src=ctx.createBufferSource(),filter=ctx.createBiquadFilter();src.buffer=buffer;src.loop=true;filter.type=type==='rain'?'highpass':'lowpass';filter.frequency.value={rain:1300,ocean:650,forest:1200,fire:480,wind:850,drone:350}[type]||700;src.connect(filter).connect(master);src.start();return src}
-function startAudio(){ctx||=new(window.AudioContext||window.webkitAudioContext)();ctx.resume();source?.stop();master=ctx.createGain();master.gain.value=+document.querySelector('#visualVolume').value*.55;master.connect(ctx.destination);source=createNoise(scenes[current].type);playing=true;document.querySelector('#escape').classList.add('playing');document.querySelector('#playVisual').textContent='⏸';document.querySelector('#trackState').textContent='NOW DRIFTING';clearInterval(timer);timer=setInterval(()=>{elapsed++;document.querySelector('#sessionTime').textContent=`${String(elapsed/60|0).padStart(2,'0')}:${String(elapsed%60).padStart(2,'0')}`},1000)}
-function toggleAudio(){if(!playing&&(!ctx||!source))return startAudio();if(ctx.state==='running'){ctx.suspend();playing=false;clearInterval(timer);document.querySelector('#escape').classList.remove('playing');document.querySelector('#playVisual').textContent='▶';document.querySelector('#trackState').textContent='PAUSED'}else{ctx.resume();playing=true;document.querySelector('#escape').classList.add('playing');document.querySelector('#playVisual').textContent='⏸';document.querySelector('#trackState').textContent='NOW DRIFTING';clearInterval(timer);timer=setInterval(()=>{elapsed++;document.querySelector('#sessionTime').textContent=`${String(elapsed/60|0).padStart(2,'0')}:${String(elapsed%60).padStart(2,'0')}`},1000)}}
-function syncSceneVideos(name,restart=false){document.querySelectorAll('.scene').forEach(scene=>{const video=scene.querySelector('.scene-video');if(!video)return;video.playbackRate=.72;if(scene.dataset.scene===name){if(video.readyState===0)video.load();if(restart)video.currentTime=0;video.play().catch(()=>{})}else video.pause()})}
-function switchScene(name){current=name;document.querySelectorAll('.scene').forEach(s=>s.classList.toggle('active',s.dataset.scene===name));syncSceneVideos(name);document.querySelectorAll('.scene-option').forEach(b=>b.classList.toggle('active',b.dataset.target===name));const s=scenes[name];document.querySelector('#sceneTitle').innerHTML=s.heading;document.querySelector('#sceneNumber').textContent=s.label;document.querySelector('#sceneDescription').textContent=s.desc;document.querySelector('#trackName').textContent=s.title;if(playing)startAudio()}
-document.querySelectorAll('.scene-option').forEach(b=>b.onclick=()=>switchScene(b.dataset.target));document.querySelector('#playVisual').onclick=toggleAudio;document.querySelector('#visualVolume').oninput=e=>{if(master)master.gain.value=+e.target.value*.55};document.querySelector('#fullscreen').onclick=()=>document.fullscreenElement?document.exitFullscreen():document.querySelector('#escape').requestFullscreen?.();
+const scenes = {
+  ocean: {
+    heading: "Moonlit<br><em>tides.</em>",
+    label: "01 · NIGHT OCEAN",
+    desc: "Slow waves beneath an open night sky.",
+    track: {
+      title: "Theta Ocean",
+      artist: "a2m",
+      url: "https://archive.org/download/a2m-dusk-relaxation_201706/2-a2m-theta-ocean.mp3",
+    },
+  },
+  rain: {
+    heading: "Rainy<br><em>window.</em>",
+    label: "02 · SHELTERED RAIN",
+    desc: "A warm room while the weather moves outside.",
+    track: {
+      title: "Belief in Yourself Meditation",
+      artist: "Ashot Danielyan",
+      url: "https://archive.org/download/jamendo-524183/01-2034075-Ashot_Danielyan_Composer-Belief%20In%20Yourself%20Meditation.mp3",
+    },
+  },
+  forest: {
+    heading: "Forest<br><em>dawn.</em>",
+    label: "03 · MORNING FOREST",
+    desc: "First light moving through a quiet canopy.",
+    track: {
+      title: "Drift to Sleep",
+      artist: "Adam Lullaby",
+      url: "https://archive.org/download/jamendo-638715/01-2327038-Adam%20Lullaby-Baby%20Sharks%20Drift%20to%20Sleep.mp3",
+    },
+  },
+  aurora: {
+    heading: "Aurora<br><em>night.</em>",
+    label: "04 · NORTHERN SKY",
+    desc: "Color and stillness above distant mountains.",
+    track: {
+      title: "Deep Blue Ocean",
+      artist: "Konstantin Pazuzu Studio",
+      url: "https://archive.org/download/jamendo-638462/01-2326430-KonstantinPazuzuStudio-Deep%20Blue%20Ocean.mp3",
+    },
+  },
+  embers: {
+    heading: "Quiet<br><em>embers.</em>",
+    label: "05 · FIRESIDE",
+    desc: "A small fire holding back the night.",
+    track: {
+      title: "Drift to Sleep",
+      artist: "Adam Lullaby",
+      url: "https://archive.org/download/jamendo-638715/01-2327038-Adam%20Lullaby-Baby%20Sharks%20Drift%20to%20Sleep.mp3",
+    },
+  },
+  clouds: {
+    heading: "Above<br><em>clouds.</em>",
+    label: "06 · OPEN AIR",
+    desc: "A slow horizon with nowhere else to be.",
+    track: {
+      title: "Belief in Yourself Meditation",
+      artist: "Ashot Danielyan",
+      url: "https://archive.org/download/jamendo-524183/01-2034075-Ashot_Danielyan_Composer-Belief%20In%20Yourself%20Meditation.mp3",
+    },
+  },
+};
+
+let current = "ocean";
+let playing = false;
+let elapsed = 0;
+let timer;
+let fadeTimer;
+const visualAudio = new Audio();
+visualAudio.loop = true;
+visualAudio.preload = "metadata";
+
+document.querySelector("#visualWave").innerHTML = Array.from(
+  { length: 70 },
+  () => `<i style="--h:${5 + Math.random() * 20}px;--d:-${Math.random()}s"></i>`,
+).join("");
+
+function updateTimer() {
+  clearInterval(timer);
+  timer = setInterval(() => {
+    elapsed++;
+    document.querySelector("#sessionTime").textContent =
+      `${String((elapsed / 60) | 0).padStart(2, "0")}:${String(elapsed % 60).padStart(2, "0")}`;
+  }, 1000);
+}
+
+function startAudio() {
+  const track = scenes[current].track;
+  const targetVolume = +document.querySelector("#visualVolume").value * 0.3;
+  visualAudio.pause();
+  visualAudio.src = track.url;
+  visualAudio.volume = 0;
+  visualAudio.play().catch(() => {
+    playing = false;
+    document.querySelector("#escape").classList.remove("playing");
+    document.querySelector("#playVisual").textContent = "▶";
+    document.querySelector("#trackState").textContent = "UNABLE TO PLAY";
+  });
+  playing = true;
+  document.querySelector("#escape").classList.add("playing");
+  document.querySelector("#playVisual").textContent = "⏸";
+  document.querySelector("#trackState").textContent = "NOW DRIFTING";
+  clearInterval(fadeTimer);
+  let fadeStep = 0;
+  fadeTimer = setInterval(() => {
+    fadeStep++;
+    visualAudio.volume = targetVolume * (fadeStep / 20);
+    if (fadeStep >= 20) clearInterval(fadeTimer);
+  }, 100);
+  updateTimer();
+}
+
+function toggleAudio() {
+  if (!visualAudio.src) return startAudio();
+  if (!visualAudio.paused) {
+    visualAudio.pause();
+    playing = false;
+    clearInterval(timer);
+    document.querySelector("#escape").classList.remove("playing");
+    document.querySelector("#playVisual").textContent = "▶";
+    document.querySelector("#trackState").textContent = "PAUSED";
+  } else {
+    visualAudio.play();
+    playing = true;
+    document.querySelector("#escape").classList.add("playing");
+    document.querySelector("#playVisual").textContent = "⏸";
+    document.querySelector("#trackState").textContent = "NOW DRIFTING";
+    updateTimer();
+  }
+}
+
+function syncSceneVideos(name, restart = false) {
+  document.querySelectorAll(".scene").forEach((scene) => {
+    const video = scene.querySelector(".scene-video");
+    if (!video) return;
+    video.playbackRate = 0.72;
+    if (scene.dataset.scene === name) {
+      if (video.readyState === 0) video.load();
+      if (restart) video.currentTime = 0;
+      video.play().catch(() => {});
+    } else video.pause();
+  });
+}
+
+function switchScene(name) {
+  current = name;
+  document.querySelectorAll(".scene").forEach((scene) =>
+    scene.classList.toggle("active", scene.dataset.scene === name),
+  );
+  syncSceneVideos(name);
+  document.querySelectorAll(".scene-option").forEach((button) =>
+    button.classList.toggle("active", button.dataset.target === name),
+  );
+  const scene = scenes[name];
+  document.querySelector("#sceneTitle").innerHTML = scene.heading;
+  document.querySelector("#sceneNumber").textContent = scene.label;
+  document.querySelector("#sceneDescription").textContent = scene.desc;
+  document.querySelector("#trackName").textContent =
+    `${scene.track.title} · ${scene.track.artist}`;
+  if (playing) startAudio();
+}
+
+document.querySelectorAll(".scene-option").forEach((button) => {
+  button.onclick = () => switchScene(button.dataset.target);
+});
+document.querySelector("#playVisual").onclick = toggleAudio;
+document.querySelector("#visualVolume").oninput = (event) => {
+  clearInterval(fadeTimer);
+  visualAudio.volume = +event.target.value * 0.3;
+};
+document.querySelector("#fullscreen").onclick = () =>
+  document.fullscreenElement
+    ? document.exitFullscreen()
+    : document.querySelector("#escape").requestFullscreen?.();
+
+document.querySelector("#trackName").textContent =
+  `${scenes[current].track.title} · ${scenes[current].track.artist}`;
 syncSceneVideos(current);
-document.addEventListener('visibilitychange',()=>document.hidden?document.querySelectorAll('.scene-video').forEach(video=>video.pause()):syncSceneVideos(current));
+document.addEventListener("visibilitychange", () =>
+  document.hidden
+    ? document.querySelectorAll(".scene-video").forEach((video) => video.pause())
+    : syncSceneVideos(current),
+);
